@@ -173,6 +173,4 @@ if __name__ == '__main__':
 				count//10 + 1, total_pages, count, total_sets))
 	f.write(latex_footer)
 	f.close()
-	print('xelatex {0}; open {1}'.format(outfile, pdffile))
-
-	
+	print('mogrify -verbose -trim images/*.jpg; xelatex {0}; open {1}'.format(outfile, pdffile))
