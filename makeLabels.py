@@ -27,7 +27,7 @@ latex_header = """
 	\\raggedright % but measures 4.125in wide
 	\\begin{minipage}[c]{1.3in}
 		\\includegraphics[width=1.29in,
-			height=1.95in,
+			height=1.9in,
 			keepaspectratio,]{#1}
 	\\end{minipage}
 	\\begin{minipage}[c]{2.2in}
