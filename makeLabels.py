@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import random
+import string
 import shutil # to save it locally
 import requests # to get image from the web
 
@@ -108,8 +109,10 @@ def makeLabel(set_dict):
 	latex_str += ('(\\textbf{'
 		+set_dict.get('year')
 		+'})\\\\\n')
+	latex_str += ('{\\normalsize '
+		+set_dict.get('num_parts')
+		+'pieces}\\\\\n')
 	latex_str += '\\end{legocell}\n'
-
 	#print(latex_str)
 	print('{0} -- {1} ({2})-- {3}'.format(
 		lego_id, set_dict.get('theme_name'),
@@ -154,8 +157,9 @@ if __name__ == '__main__':
 	print("Found {0} Lego Sets to process".format(total_sets))
 	#random.shuffle(set_info_tree)
 
-	outfile = 'output.tex'
-	pdffile = os.path.splitext(outfile)[0] + '.pdf'
+	filename_root = os.path.splitext(legoidFile)[0]
+	outfile = filename_root + '.tex'
+	pdffile = filename_root + '.pdf'
 	f = open(outfile, 'w')
 	f.write(latex_header)
 	count = 0
