@@ -12,6 +12,8 @@ pip3 install rebrick
 
 # get account on rebrickable.com and obtain api key
 echo 'api_key: <my_api_key>' >> rebrick_api_key.yml
+# example hex key (not a real one)
+echo 'api_key: db161ef60f45e5d76cf92b6a6d6a3f6b' >> rebrick_api_key.yml 
 
 # lookup the set data and save to CSV
 ./lookupLegoRebrick.py example_sets.csv
