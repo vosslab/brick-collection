@@ -1,0 +1,22 @@
+
+==========================
+USAGE ON MAC OS 
+==========================
+
+# google search homebrew macos to install homebrew
+brew install mactex
+
+# get account on rebrickable.com and obtain api key
+echo 'api_key: <my_api_key>' >> rebrick_api_key.yml
+
+# lookup the set data and save to CSV
+./lookupLegoRebrick.py example_sets.csv
+
+# create TeX file from rebrickable CSV data
+./makeLabels.py rebrick_legoid_data_output-??????????.csv
+
+# create PDF from TeX file
+xelatex rebrick_legoid_data_output-??????????.tex
+
+# open the PDF file in Preview.app
+open rebrick_legoid_data_output-??????????.pdf
