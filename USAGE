@@ -4,7 +4,11 @@ USAGE ON MAC OS
 ==========================
 
 # google search homebrew macos to install homebrew
-brew install mactex
+brew install --formula python imagemagick 
+brew install --cask --require-sha mactex
+
+# install the rebrick python module from pypi
+pip3 install rebrick
 
 # get account on rebrickable.com and obtain api key
 echo 'api_key: <my_api_key>' >> rebrick_api_key.yml
@@ -14,6 +18,9 @@ echo 'api_key: <my_api_key>' >> rebrick_api_key.yml
 
 # create TeX file from rebrickable CSV data
 ./makeLabels.py output-rebrick_legoid_data-??????????.csv
+
+# (optional) trim whitespace from edges of images
+mogrify -verbose -trim images/*.jpg
 
 # create PDF from TeX file
 xelatex output-rebrick_legoid_data-??????????.tex
