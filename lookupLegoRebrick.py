@@ -67,6 +67,8 @@ def getSetData(legoID):
 	set_data = rebrick_set_cache.get(legoID)
 	if set_data is not None:
 		print('{0} -- {1} -- from cache'.format(set_data.get('set_num'), set_data.get('name'),))
+		set_data['theme_name'] = getThemeName(set_data['theme_id'])
+		rebrick_set_cache[legoID] = set_data
 		return set_data
 	if legoID < 3000:
 		print("Error: Lego set ID is too small: {0}".format(legoID))
