@@ -6,6 +6,7 @@ import json
 import time
 import yaml
 import random
+import string
 import rebrick
 
 api_dict = yaml.safe_load(open('rebrick_api_key.yml', 'r'))
@@ -28,7 +29,7 @@ except IOError:
 #============================
 def makeTimestamp():
 	datestamp = time.strftime("%y%b%d").lower()
-	hourstamp = string.lowercase[(time.localtime()[3])%26]
+	hourstamp = string.ascii_lowercase[(time.localtime()[3])%26]
 	if hourstamp == "x":
 		### SPIDER does not like x's
 		hourstamp = "z"
@@ -46,7 +47,7 @@ def getThemeName(themeID):
 		return theme_name
 	response = rebrick.lego.get_theme(themeID)
 	theme_data = json.loads(response.read())
-	print(theme_data)
+	#print(theme_data)
 	if theme_data.get('parent_id') is not None:
 		parent_name = getThemeName(theme_data.get('parent_id'))
 		if not theme_data['name'].startswith(parent_name):
@@ -60,12 +61,12 @@ def getThemeName(themeID):
 	#print(theme_name)
 	return theme_name
 
-
 #============================
 #============================
 def getSetData(legoID):
 	set_data = rebrick_set_cache.get(legoID)
 	if set_data is not None:
+		print('{0} -- {1} -- from cache'.format(set_data.get('set_num'), set_data.get('name'),))
 		return set_data
 	if legoID < 3000:
 		print("Error: Lego set ID is too small: {0}".format(legoID))
@@ -77,7 +78,9 @@ def getSetData(legoID):
 	response = rebrick.lego.get_set(legoID)
 	set_data = json.loads(response.read())
 	set_data['theme_name'] = getThemeName(set_data['theme_id'])
-	rebrick_theme_cache[legoID] = set_data
+	print('{0} -- {1} -- from Rebrick website'.format(set_data.get('set_num'), set_data.get('name'),))
+
+	rebrick_set_cache[legoID] = set_data
 	return set_data
 
 #============================
@@ -104,21 +107,22 @@ if __name__ == '__main__':
 	legoIds = list(set(legoIDs))
 	legoIDs.sort()
 	print("Found {0} Lego IDs to process".format(len(legoIDs)))
-	random.shuffle(legoIDs)
+	#random.shuffle(legoIDs)
 
-	csvfile = "rebrick_legoid_data_output.csv"
+	timestamp = makeTimestamp()
+	csvfile = "rebrick_legoid_data_output-{0}.csv".format(timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	for legoID in legoIDs:
 		line += 1
 		sys.stderr.write(".")
-		print(legoID)
+		#print(legoID)
 		data = getSetData(legoID)
 		#print(data)
 		if line == 1:
 			allkeys = list(data.keys())
 			allkeys.sort()
-			print(allkeys)
+			print(', '.join(allkeys))
 			for key in allkeys:
 				f.write("%s\t"%(str(key)))
 			f.write("\n")
