@@ -110,7 +110,7 @@ if __name__ == '__main__':
 	#random.shuffle(legoIDs)
 
 	timestamp = makeTimestamp()
-	csvfile = "rebrick_legoid_data_output-{0}.csv".format(timestamp)
+	csvfile = "output-rebrick_legoid_data-{0}.csv".format(timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	for legoID in legoIDs:
