@@ -111,7 +111,7 @@ def makeLabel(set_dict):
 		+'})\\\\\n')
 	latex_str += ('{\\normalsize '
 		+set_dict.get('num_parts')
-		+'pieces}\\\\\n')
+		+' pieces}\\\\\n')
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
 	print('{0} -- {1} ({2})-- {3}'.format(
