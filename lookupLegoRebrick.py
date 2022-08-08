@@ -15,12 +15,12 @@ rebrick.init(api_key)
 #Usage: init(API_KEY) or init(API_KEY, USER_TOKEN) or init(API_KEY, username, password).
 
 try:
-	rebrick_theme_cache = yaml.safe_load( open( "rebrick_theme_cache.yml", "r" ) )
+	rebrick_theme_cache = yaml.safe_load( open( "CACHE/rebrick_theme_cache.yml", "r" ) )
 	print("loaded %d entires from rebrick_theme_cache"%(len(rebrick_theme_cache)))
 except IOError:
 	rebrick_theme_cache = {}
 try:
-	rebrick_set_cache = yaml.safe_load( open( "rebrick_set_cache.yml", "r" ) )
+	rebrick_set_cache = yaml.safe_load( open( "CACHE/rebrick_set_cache.yml", "r" ) )
 	print("loaded %d entires from rebrick_set_cache"%(len(rebrick_set_cache)))
 except IOError:
 	rebrick_set_cache = {}
@@ -45,6 +45,7 @@ def getThemeName(themeID):
 	theme_name = rebrick_theme_cache.get(themeID)
 	if theme_name is not None:
 		return theme_name
+	time.sleep(random.random())
 	response = rebrick.lego.get_theme(themeID)
 	theme_data = json.loads(response.read())
 	#print(theme_data)
@@ -139,10 +140,9 @@ if __name__ == '__main__':
 	sys.stderr.write("\n")
 	print(("Wrote %d lines to %s"%(line, csvfile)))
 
-	yaml.dump( rebrick_theme_cache, open( "rebrick_theme_cache.yml", "w" ) )
+	yaml.dump( rebrick_theme_cache, open( "CACHE/rebrick_theme_cache.yml", "w" ) )
 	print("wrote %d entires to rebrick_theme_cache"%(len(rebrick_theme_cache)))
-	yaml.dump( rebrick_set_cache, open( "rebrick_set_cache.yml", "w" ) )
+	yaml.dump( rebrick_set_cache, open( "CACHE/rebrick_set_cache.yml", "w" ) )
 	print("wrote %d entires to rebrick_set_cache"%(len(rebrick_set_cache)))
 
 	print(("open %s"%(csvfile)))
-
