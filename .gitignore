@@ -4,6 +4,15 @@
 # Ignore YAML files used for config and cache
 *.yml
 
+# Ignore CSV files used for input and output
+*.csv
+
+# Ignore TeX files used mostly for output
+*.tex
+
+# Ignore PDF files used for output
+*.pdf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
