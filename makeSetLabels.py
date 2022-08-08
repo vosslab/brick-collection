@@ -151,7 +151,7 @@ if __name__ == '__main__':
 			set_dict[key] = val
 		set_info_tree.append(set_dict)
 	f.close()
-	set_info_tree = sorted(set_info_tree, key = lambda item: item['set_num'])
+	set_info_tree = sorted(set_info_tree, key = lambda item: int(item['set_num'][:-2]))
 
 	total_sets = len(set_info_tree)
 	print("Found {0} Lego Sets to process".format(total_sets))
@@ -173,4 +173,4 @@ if __name__ == '__main__':
 				count//10 + 1, total_pages, count, total_sets))
 	f.write(latex_footer)
 	f.close()
-	print('mogrify -verbose -trim images/*.jpg; xelatex {0}; open {1}'.format(outfile, pdffile))
+	print('mogrify -verbose -trim images/set_*.jpg; \nxelatex {0}; open {1}'.format(outfile, pdffile))
