@@ -9,8 +9,9 @@ import shutil # to save it locally
 import requests # to get image from the web
 
 latex_header = """
-\\documentclass[letterpaper]{article}% Avery 5163
-\\usepackage[top=0.5in, bottom=0.5in, left=0.16in, right=0.16in, noheadfoot]{geometry}
+\\documentclass[letterpaper]{article}% Avery 18260
+% https://www.avery.com/blank/labels/94200
+\\usepackage[top=0.5in, bottom=0.4in, left=0.28in, right=0.14in, noheadfoot]{geometry}
 \\usepackage{varwidth}
 \\usepackage{graphicx}
 \\usepackage{xcolor}
@@ -20,17 +21,17 @@ latex_header = """
 
 \\newenvironment{legocell}[1]
 {
-	\\begin{minipage}[c][2.0in][c]{4in}
+	\\begin{minipage}[c][0.98in][c]{2.625in}
 	\\centering
-	% Avery 5163 described as 2in by 4in
-	\\varwidth{3.6in}
-	\\raggedright % but measures 4.125in wide
-	\\begin{minipage}[c]{1.3in}
-		\\includegraphics[width=1.29in,
-			height=1.85in,
+	% Avery 18260 described as 1in by 2 5/8in
+	\\varwidth{2.5in}
+	\\raggedright % but measures 2.75in wide
+	\\begin{minipage}[c]{0.7in}
+		\\includegraphics[width=0.65in,
+			height=0.65in,
 			keepaspectratio,]{#1}
 	\\end{minipage}
-	\\begin{minipage}[c]{2.2in}
+	\\begin{minipage}[c]{1.7in}
 	\\raggedright
 }
 {
@@ -41,13 +42,11 @@ latex_header = """
 	\\ignorespaces
 }
 
-
-
 \\parindent=0pt
 \\pagestyle{empty}
 
 \\begin{document}
-\\Large
+\\small
 % set font size
 """
 
@@ -80,43 +79,52 @@ def downloadImage(image_url, filename=None):
 
 #============================
 #============================
-def makeLabel(set_dict):
+def makeLabel(minifig_dict):
 	"""
-	\begin{legocell}{set_10745-1.jpg}
-	Lego ID --- Title\\
-	Theme (Year)
+	\begin{legocell}{minifig_sw0094.jpg}
+	Minifig ID from set Lego ID (Year)\\
+	Name
+	Sales / Avg Price
 	\end{legocell}
 	"""
-	set_id = set_dict.get('set_num')
-	lego_id = int(set_id.split('-')[0])
-	print('Processing Set {0}'.format(lego_id))
-	filename = "images/set_{0}.jpg".format(set_id)
-	image_url = set_dict.get('set_img_url')
+	lego_id = minifig_dict.get('set_num')
+	minifig_id = minifig_dict.get('no')
+	print('Processing Minifig {0} from Set {0}'.format(minifig_id, lego_id))
+	filename = "images/minifig_{0}.jpg".format(minifig_id)
+	image_url = minifig_dict.get('image_url')
+	image_url = 'https:' + image_url
 	downloadImage(image_url, filename)
+
+	minifig_name = minifig_dict.get('name')
+	minifig_name = minifig_name.replace('#', '')
+	if len(minifig_name) > 100:
+		new_name = ''
+		bits = minifig_name.split(' ')
+		i = 0
+		while len(new_name) < 90:
+			new_name += bits[i] + ' '
+			i += 1
+		minifig_name = new_name
 
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
-	latex_str += ('\\textbf{'
+	latex_str += ('\\textbf{\\color{DarkBlue}\\Large '
+		+str(minifig_id)
+		+'}\\\\\n')
+	latex_str += ('from set \\textbf{\\large'
 		+str(lego_id)
+		+ '} ('
+		+minifig_dict.get('year_released')
+		+')\\\\\n')
+	latex_str += ('{\\sffamily\\scriptsize '
+		+minifig_name
 		+'}\\\\\n')
-	latex_str += ('{\\sffamily\\large '
-		+set_dict.get('name')
-		+'}\\\\\n')
-	latex_str += ('\\textsc{\\color{DarkBlue}\\normalsize '
-		+set_dict.get('theme_name')
-		+'}\\\\\n')
-	latex_str += ('(\\textbf{'
-		+set_dict.get('year')
-		+'})\\\\\n')
-	latex_str += ('{\\normalsize '
-		+set_dict.get('num_parts')
-		+' pieces}\\\\\n')
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
-	print('{0} -- {1} ({2})-- {3}'.format(
-		lego_id, set_dict.get('theme_name'),
-		set_dict.get('year'), set_dict.get('name')))
+	print('{0} -- {1} ({2}) -- {3}'.format(
+		minifig_id, lego_id,
+		minifig_dict.get('year_released'), minifig_dict.get('name')[:60]))
 
 	return latex_str
 
@@ -124,18 +132,18 @@ def makeLabel(set_dict):
 #============================
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
-		print("usage: ./makeLabels.py <rebrick csv txt file>")
+		print("usage: ./makeLabels.py <bricklink csv txt file>")
 		sys.exit(1)
-	legoidFile = sys.argv[1]
-	if not os.path.isfile(legoidFile):
-		print("usage: ./makeLabels.py <rebrick csv txt file>")
+	minifigidFile = sys.argv[1]
+	if not os.path.isfile(minifigidFile):
+		print("usage: ./makeLabels.py <bricklink csv txt file>")
 		sys.exit(1)
 
-	legoIDs = []
-	f = open(legoidFile, "r")
+	minifigIDs = []
+	f = open(minifigidFile, "r")
 	line_count = 0
 	keys = None
-	set_info_tree = []
+	minifig_info_tree = []
 	for line in f:
 		sline = line.strip()
 		line_count += 1
@@ -144,33 +152,37 @@ if __name__ == '__main__':
 			keys = sline.split('\t')
 			print(keys)
 			continue
-		set_dict = {}
+		minifig_dict = {}
 		values = sline.split('\t')
 		for index, val in enumerate(values):
 			key = keys[index]
-			set_dict[key] = val
-		set_info_tree.append(set_dict)
+			minifig_dict[key] = val
+		if float(minifig_dict['weight']) > 10:
+			print("TOO BIG: weight {3} skipping {0} from set {1}: {2}".format(
+				minifig_dict['no'], minifig_dict['set_num'], minifig_dict['name'][:60], minifig_dict['weight']))
+			continue
+		minifig_info_tree.append(minifig_dict)
 	f.close()
-	set_info_tree = sorted(set_info_tree, key = lambda item: item['set_num'])
+	minifig_info_tree = sorted(minifig_info_tree, key = lambda item: item['no'])
+	minifig_info_tree = sorted(minifig_info_tree, key = lambda item: int(item['set_num']))
 
-	total_sets = len(set_info_tree)
-	print("Found {0} Lego Sets to process".format(total_sets))
-	#random.shuffle(set_info_tree)
+	total_minifigs = len(minifig_info_tree)
+	print("Found {0} Minifigs to process".format(total_minifigs))
 
-	filename_root = os.path.splitext(legoidFile)[0]
+	filename_root = os.path.splitext(minifigidFile)[0]
 	outfile = filename_root + '.tex'
 	pdffile = filename_root + '.pdf'
 	f = open(outfile, 'w')
 	f.write(latex_header)
 	count = 0
-	total_pages = total_sets // 10 + 1
-	for set_dict in set_info_tree:
+	total_pages = total_minifigs // 30 + 1
+	for minifig_dict in minifig_info_tree:
 		count += 1
-		label = makeLabel(set_dict)
+		label = makeLabel(minifig_dict)
 		f.write(label)
-		if count % 2 == 0:
+		if count % 5 == 0:
 			f.write('% page {0} of {1} --- gap line --- count {2} of {3} ---\n'.format(
-				count//10 + 1, total_pages, count, total_sets))
+				count//30 + 1, total_pages, count, total_minifigs))
 	f.write(latex_footer)
 	f.close()
-	print('mogrify -verbose -trim images/*.jpg; xelatex {0}; open {1}'.format(outfile, pdffile))
+	print('\n\nmogrify -verbose -trim images/minifig_*.jpg; \nxelatex {0}; open {1}'.format(outfile, pdffile))
