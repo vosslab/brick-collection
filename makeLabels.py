@@ -27,7 +27,7 @@ latex_header = """
 	\\raggedright % but measures 4.125in wide
 	\\begin{minipage}[c]{1.3in}
 		\\includegraphics[width=1.29in,
-			height=1.9in,
+			height=1.85in,
 			keepaspectratio,]{#1}
 	\\end{minipage}
 	\\begin{minipage}[c]{2.2in}
@@ -93,7 +93,7 @@ def makeLabel(set_dict):
 	filename = "images/set_{0}.jpg".format(set_id)
 	image_url = set_dict.get('set_img_url')
 	downloadImage(image_url, filename)
-	
+
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -117,7 +117,7 @@ def makeLabel(set_dict):
 	print('{0} -- {1} ({2})-- {3}'.format(
 		lego_id, set_dict.get('theme_name'),
 		set_dict.get('year'), set_dict.get('name')))
-	
+
 	return latex_str
 
 #============================
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 	if not os.path.isfile(legoidFile):
 		print("usage: ./makeLabels.py <rebrick csv txt file>")
 		sys.exit(1)
-		
+
 	legoIDs = []
 	f = open(legoidFile, "r")
 	line_count = 0
