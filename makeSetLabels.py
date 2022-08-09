@@ -94,6 +94,10 @@ def makeLabel(set_dict):
 	image_url = set_dict.get('set_img_url')
 	downloadImage(image_url, filename)
 
+	set_name =set_dict.get('name')
+	set_name = set_name.replace('#', '')
+	set_name = set_name.replace(' & ', ' and ')
+
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -101,7 +105,7 @@ def makeLabel(set_dict):
 		+str(lego_id)
 		+'}\\\\\n')
 	latex_str += ('{\\sffamily\\large '
-		+set_dict.get('name')
+		+set_name
 		+'}\\\\\n')
 	latex_str += ('\\textsc{\\color{DarkBlue}\\normalsize '
 		+set_dict.get('theme_name')
