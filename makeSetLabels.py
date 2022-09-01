@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -73,9 +73,9 @@ def downloadImage(image_url, filename=None):
 		# Open a local file with wb ( write binary ) permission.
 		with open(filename,'wb') as f:
 			shutil.copyfileobj(r.raw, f)
-		print('Image sucessfully Downloaded: ', filename)
+		print('.. image sucessfully downloaded: ', filename)
 	else:
-		print('Image Couldn\'t be retreived: '+image_url)
+		print('!! image couldn\'t be retreived: '+image_url)
 	return filename
 
 #============================
@@ -162,8 +162,8 @@ if __name__ == '__main__':
 	#random.shuffle(set_info_tree)
 
 	filename_root = os.path.splitext(legoidFile)[0]
-	outfile = filename_root + '.tex'
-	pdffile = filename_root + '.pdf'
+	outfile = "labels-" + filename_root + '.tex'
+	pdffile = "labels-" + filename_root + '.pdf'
 	f = open(outfile, 'w')
 	f.write(latex_header)
 	count = 0
