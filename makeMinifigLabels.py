@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -7,6 +7,7 @@ import random
 import string
 import shutil # to save it locally
 import requests # to get image from the web
+import bricklink_wrapper
 
 latex_header = """
 \\documentclass[letterpaper]{article}% Avery 18260
@@ -72,14 +73,14 @@ def downloadImage(image_url, filename=None):
 		# Open a local file with wb ( write binary ) permission.
 		with open(filename,'wb') as f:
 			shutil.copyfileobj(r.raw, f)
-		print('Image sucessfully Downloaded: ', filename)
+		print('.. image sucessfully downloaded: ', filename)
 	else:
-		print('Image Couldn\'t be retreived: '+image_url)
+		print('!! image couldn\'t be retreived: '+image_url)
 	return filename
 
 #============================
 #============================
-def makeLabel(minifig_dict):
+def makeLabel(minifig_dict, price_dict):
 	"""
 	\begin{legocell}{minifig_sw0094.jpg}
 	Minifig ID from set Lego ID (Year)\\
@@ -87,9 +88,10 @@ def makeLabel(minifig_dict):
 	Sales / Avg Price
 	\end{legocell}
 	"""
-	lego_id = minifig_dict.get('set_num')
-	minifig_id = minifig_dict.get('no')
-	print('Processing Minifig {0} from Set {0}'.format(minifig_id, lego_id))
+	print(minifig_dict)
+	set_num = minifig_dict.get('set_num')
+	minifig_id = minifig_dict.get('minifig_id')
+	print('-----\nProcessing Minifig {0} from Set {0}'.format(minifig_id, set_num))
 	filename = "images/minifig_{0}.jpg".format(minifig_id)
 	image_url = minifig_dict.get('image_url')
 	image_url = 'https:' + image_url
@@ -105,7 +107,8 @@ def makeLabel(minifig_dict):
 			new_name += bits[i] + ' '
 			i += 1
 		minifig_name = new_name
-
+	new_median_price = float(price_dict['new_median_price'])
+	used_median_price = float(price_dict['used_median_price'])
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -113,17 +116,20 @@ def makeLabel(minifig_dict):
 		+str(minifig_id)
 		+'}\\\\\n')
 	latex_str += ('from set \\textbf{\\large'
-		+str(lego_id)
+		+str(set_num)
 		+ '} ('
 		+minifig_dict.get('year_released')
 		+')\\\\\n')
 	latex_str += ('{\\sffamily\\scriptsize '
 		+minifig_name
 		+'}\\\\\n')
+	latex_str += '{\\scriptsize '
+	latex_str += '${0:.2f} new / ${1:.2f} used '.format(new_median_price, used_median_price)
+	latex_str += '}\\\\\n'
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
 	print('{0} -- {1} ({2}) -- {3}'.format(
-		minifig_id, lego_id,
+		minifig_id, set_num,
 		minifig_dict.get('year_released'), minifig_dict.get('name')[:60]))
 
 	return latex_str
@@ -132,12 +138,16 @@ def makeLabel(minifig_dict):
 #============================
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
-		print("usage: ./makeLabels.py <bricklink csv txt file>")
+		print("usage: ./makeLabels.py <bricklink minifig csv txt file>")
 		sys.exit(1)
 	minifigidFile = sys.argv[1]
 	if not os.path.isfile(minifigidFile):
-		print("usage: ./makeLabels.py <bricklink csv txt file>")
+		print("usage: ./makeLabels.py <bricklink minifig csv txt file>")
 		sys.exit(1)
+
+	if 'minifig' not in minifigidFile.lower():
+		print("WARNING: this program takes minifig data, not set data")
+		time.sleep(1)
 
 	minifigIDs = []
 	f = open(minifigidFile, "r")
@@ -157,7 +167,7 @@ if __name__ == '__main__':
 		for index, val in enumerate(values):
 			key = keys[index]
 			minifig_dict[key] = val
-		if float(minifig_dict['weight']) > 10:
+		if float(minifig_dict['weight']) > 10e6:
 			print("TOO BIG: weight {3} skipping {0} from set {1}: {2}".format(
 				minifig_dict['no'], minifig_dict['set_num'], minifig_dict['name'][:60], minifig_dict['weight']))
 			continue
@@ -170,15 +180,18 @@ if __name__ == '__main__':
 	print("Found {0} Minifigs to process".format(total_minifigs))
 
 	filename_root = os.path.splitext(minifigidFile)[0]
-	outfile = filename_root + '.tex'
-	pdffile = filename_root + '.pdf'
+	outfile = "labels-" + filename_root + '.tex'
+	pdffile = "labels-" + filename_root + '.pdf'
 	f = open(outfile, 'w')
 	f.write(latex_header)
 	count = 0
 	total_pages = total_minifigs // 30 + 1
+	BLwrap = bricklink_wrapper.BrickLink()
 	for minifig_dict in minifig_info_tree:
+		minifigID = minifig_dict['minifig_id']
+		price_dict = BLwrap.getMinifigsPriceData(minifigID)
 		count += 1
-		label = makeLabel(minifig_dict)
+		label = makeLabel(minifig_dict, price_dict)
 		f.write(label)
 		if count % 5 == 0:
 			f.write('% page {0} of {1} --- gap line --- count {2} of {3} ---\n'.format(
