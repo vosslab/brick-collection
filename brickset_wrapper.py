@@ -6,12 +6,6 @@ import yaml
 import random
 import brickfront
 
-
-
-
-
-
-
 class BrickSet(object):
 	#============================
 	#============================
@@ -124,14 +118,16 @@ class BrickSet(object):
 
 	#============================
 	#============================
-	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US',
+			currency_code='USD', verbose=True):
 		self._check_lego_ID(legoID)
 		pass
 		return price_data
 
 	#============================
 	#============================
-	def getMinifigPriceDetails(self, minifigID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+	def getMinifigPriceDetails(self, minifigID, new_or_used='U', country_code='US',
+			currency_code='USD', verbose=True):
 		pass
 		return price_data
 
@@ -159,6 +155,3 @@ class BrickSet(object):
 	def getPartData(self, partID, verbose=True):
 		pass
 		return part_data
-
-
-
