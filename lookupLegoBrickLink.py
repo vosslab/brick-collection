@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -49,7 +49,7 @@ if __name__ == '__main__':
 	#random.shuffle(legoIDs)
 
 	timestamp = makeTimestamp()
-	csvfile = "bricklink-legoid_data-{0}.csv".format(timestamp)
+	csvfile = "set_data-bricklink-{0}.csv".format(timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	BLwrap = bricklink_wrapper.BrickLink()
