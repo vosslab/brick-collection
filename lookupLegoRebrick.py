@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 	#random.shuffle(legoIDs)
 
 	timestamp = makeTimestamp()
-	csvfile = "output-rebrick_legoid_data-{0}.csv".format(timestamp)
+	csvfile = "set_data-rebrick-{0}.csv".format(timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	for legoID in legoIDs:
