@@ -4,6 +4,7 @@ import sys
 import time
 import yaml
 import random
+import statistics
 import bricklink.api
 
 class BrickLink(object):
@@ -19,12 +20,13 @@ class BrickLink(object):
 
 		self.data_caches = [
 			'bricklink_category_cache',
-			'bricklink_set_cache',
-			'bricklink_part_cache',
-			'bricklink_subsets_cache',
 			'bricklink_minifig_cache',
 			'bricklink_minifig_set_cache',
+			'bricklink_part_cache',
+			'bricklink_price_cache',
 			'bricklink_set_brick_weight_cache',
+			'bricklink_set_cache',
+			'bricklink_subsets_cache',
 		]
 
 		for cache_name in self.data_caches:
@@ -119,6 +121,7 @@ class BrickLink(object):
 				print('SET {0} -- {1} ({2}) -- from cache'.format(
 					set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
 			set_data['category_name'] = self.getCategoryName(set_data['category_id'])
+			set_data['set_num'] = legoID
 			self.bricklink_set_cache[legoID] = set_data
 			return set_data
 		###################
@@ -129,6 +132,7 @@ class BrickLink(object):
 			print('SET {0} -- {1} ({2}) -- from BrickLink website'.format(
 				set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
 		set_data['time'] = int(time.time())
+		set_data['set_num'] = legoID
 		self.bricklink_set_cache[legoID] = set_data
 		return set_data
 
@@ -226,9 +230,76 @@ class BrickLink(object):
 		###################
 		avg_price = float(price_data['avg_price'])
 		qty = price_data['total_quantity']
-		if verbose is True:
+		if verbose is True and qty > 1:
 			print('SET {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
 				legoID, avg_price, qty))
+		return price_data
+
+	#============================
+	#============================
+	def getSetPriceData(self, legoID, verbose=False):
+		self._check_lego_ID(legoID)
+		price_data = self.lookUpPriceDataCache(legoID, verbose)
+		if price_data is not None:
+			return price_data
+		used_price_data = self.getSetPriceDetails(legoID, new_or_used='U', verbose=verbose)
+		new_price_data 	= self.getSetPriceDetails(legoID, new_or_used='N', verbose=verbose)
+		price_data = self.compilePriceData(legoID, new_price_data, used_price_data)
+		return price_data
+
+	#============================
+	#============================
+	def lookUpPriceDataCache(self, item_id, verbose=True):
+		price_data = self.bricklink_price_cache.get(item_id)
+		if random.random() > 0.1 and price_data is not None:
+			if verbose is True:
+				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- from cache'.format(
+					price_data.get('item_id'), float(price_data.get('new_median_price'))/100.,
+					float(price_data.get('used_median_price'))/100.,))
+			if time.time() - price_data['time'] < 10000:
+				return price_data
+		return None
+
+	#============================
+	#============================
+	def compilePriceData(self, item_id, new_price_data, used_price_data, verbose=True):
+		###################
+		used_avg_price 	= int(float(used_price_data['avg_price'])*100)
+		used_qty 		= int(used_price_data['total_quantity'])
+		new_avg_price 	= int(float(new_price_data['avg_price'])*100)
+		new_qty 		= int(new_price_data['total_quantity'])
+		###################
+		# New Sales
+		new_prices = []
+		for item in new_price_data['price_detail']:
+			new_prices.append(int(float(item['unit_price'])*100))
+		#print(new_prices)
+		new_median_price = int(statistics.median(new_prices))
+		#print(new_median_price)
+		###################
+		# Used Sales
+		used_prices = []
+		for item in used_price_data['price_detail']:
+			used_prices.append(int(float(item['unit_price'])*100))
+		#print(used_prices)
+		used_median_price = int(statistics.median(used_prices))
+		#print(used_median_price)
+		###################
+		price_data = {
+			'item_id':				item_id,
+			'new_avg_price': 		new_avg_price,
+			'new_median_price': 	new_median_price,
+			'new_qty': 				new_qty,
+			'used_avg_price': 		used_avg_price,
+			'used_median_price': 	used_median_price,
+			'used_qty': 			used_qty,
+			'time':					int(time.time()),
+		}
+		if verbose is True:
+			print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- from BrickLink'.format(
+				price_data.get('item_id'), float(price_data.get('new_median_price'))/100.,
+				float(price_data.get('used_median_price'))/100.,))
+		self.bricklink_price_cache[item_id] = price_data
 		return price_data
 
 	#============================
@@ -248,19 +319,14 @@ class BrickLink(object):
 
 	#============================
 	#============================
-	def getMinifigsPrice(self, minifigID):
-		used_price_data = self.getMinifigPriceDetails(minifigID, new_or_used='U', verbose=False)
-		new_price_data = self.getMinifigPriceDetails(minifigID, new_or_used='N', verbose=False)
-		used_avg_price = float(used_price_data['avg_price'])
-		used_qty = int(used_price_data['total_quantity'])
-		new_avg_price = float(new_price_data['avg_price'])
-		new_qty = int(new_price_data['total_quantity'])
-		sales = new_qty + used_qty
-		if sales > 0:
-			avg_price = (used_qty * used_avg_price + new_qty * new_avg_price)/float(sales)
-		else:
-			avg_price = 0.0
-		return avg_price, sales
+	def getMinifigsPriceData(self, minifigID, verbose=False):
+		price_data = self.lookUpPriceDataCache(minifigID, verbose)
+		if price_data is not None:
+			return price_data
+		used_price_data = self.getMinifigPriceDetails(minifigID, new_or_used='U', verbose=verbose)
+		new_price_data 	= self.getMinifigPriceDetails(minifigID, new_or_used='N', verbose=verbose)
+		price_data = self.compilePriceData(minifigID, new_price_data, used_price_data)
+		return price_data
 
 	#============================
 	#============================
@@ -286,10 +352,8 @@ class BrickLink(object):
 				minifig_dict = {}
 				for key in key_list:
 					minifig_dict[key] = minifig_data.get(key)
-				avg_price, sales = self.getMinifigsPrice(minifigID, verbose=False)
-				minifig_dict['avg_price'] = '${0:1.2f}'.format(avg_price)
-				minifig_dict['sales'] = sales
 				minifig_dict['set_num'] = legoID
+				minifig_dict['minifig_id'] = minifigID
 				minifig_dict['set_image_url'] = set_data['image_url']
 
 				for i in range(int(entry['quantity'])):
@@ -303,7 +367,7 @@ class BrickLink(object):
 	#============================
 	def getMinifigData(self, minifigID, verbose=True):
 		minifig_data = self.bricklink_minifig_cache.get(minifigID)
-		if minifig_data is not None:
+		if random.random() > 0.1 and minifig_data is not None:
 			if verbose is True:
 				print('MINIFIG {0} -- {1} ({2}) -- from cache'.format(
 					minifig_data.get('no'), minifig_data.get('name'), minifig_data.get('year_released'),))
@@ -340,6 +404,3 @@ class BrickLink(object):
 		part_data['time'] = int(time.time())
 		self.bricklink_part_cache[partID] = part_data
 		return part_data
-
-
-
