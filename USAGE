@@ -9,6 +9,7 @@ brew install --cask --require-sha mactex
 
 # install the rebrick python module from pypi
 pip3 install rebrick
+pip3 install python-bricklink-api
 
 # get account on rebrickable.com and obtain api key
 echo 'api_key: <my_api_key>' > rebrick_api_key.yml
