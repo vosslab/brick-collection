@@ -57,19 +57,22 @@ if __name__ == '__main__':
 		sys.stderr.write(".")
 		#print(legoID)
 		set_data = BLwrap.getSetData(legoID)
-		minifig_set_tree = BLwrap.getMinifigsFromSet(legoID)
-		for minifig_data in minifig_set_tree:
+		minifig_id_tree = BLwrap.getMinifigIDsFromSet(legoID)
+		for minifigID in minifig_id_tree:
+			minifig_data = BLwrap.getMinifigData(minifigID)
+			price_data = BLwrap.getMinifigsPriceData(minifigID)
+			total_data = {**minifig_data, **price_data}
 			line += 1
 			if line == 1:
-				allkeys = list(minifig_data.keys())
-				allkeys.sort()
+				allkeys = list(total_data.keys())
+				#allkeys.sort()
 				print(', '.join(allkeys))
 				for key in allkeys:
 					f.write("%s\t"%(str(key)))
 				f.write("\n")
 			for key in allkeys:
 				try:
-					value = minifig_data[key]
+					value = total_data[key]
 					if isinstance(value, str):
 						value = value.replace(',', ' ')
 						value = value.replace('  ', ' ')
