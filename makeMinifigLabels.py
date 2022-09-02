@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import random
-import string
 import shutil # to save it locally
 import requests # to get image from the web
 import bricklink_wrapper
@@ -91,7 +90,7 @@ def makeLabel(minifig_dict, price_dict):
 	print(minifig_dict)
 	set_num = minifig_dict.get('set_num')
 	minifig_id = minifig_dict.get('minifig_id')
-	print('-----\nProcessing Minifig {0} from Set {0}'.format(minifig_id, set_num))
+	print('-----\nProcessing Minifig {0} from Set {1}'.format(minifig_id, set_num))
 	filename = "images/minifig_{0}.jpg".format(minifig_id)
 	image_url = minifig_dict.get('image_url')
 	image_url = 'https:' + image_url
