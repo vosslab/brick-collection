@@ -100,15 +100,10 @@ class BrickLink(object):
 			print("HEADERS", headers)
 			print("RESPONSE", response)
 			sys.exit(1)
-		data_dict = response['data']
-		try:
-			data_dict['time'] = int(time.time())
-		except TypeError:
-			print(type(data_dict))
-			print(url)
-			print(data_dict)
-			sys.exit(1)
-		return data_dict
+		data = response['data']
+		if isinstance(data, dict):
+			data['time'] = int(time.time())
+		return data
 
 	#============================
 	#============================
@@ -117,6 +112,11 @@ class BrickLink(object):
 		if cache_data_dict is None:
 			return False
 		###################
+		if not isinstance(cache_data_dict, dict):
+			print(cache_data_dict)
+			print("WRONG CACHE type, must be dict!!!")
+			print(type(cache_data_dict))
+			return False
 		if cache_data_dict.get('time') is None:
 			return False
 		###################
@@ -216,7 +216,7 @@ class BrickLink(object):
 		set_data = self.getSetData(legoID, verbose=False)
 		###################
 		string_weight = self.bricklink_set_brick_weight_cache.get(legoID)
-		if self._check_if_data_valid(string_weight) is True:
+		if string_weight is not None:
 			if verbose is True:
 				print('SET {0} -- {1} grams -- from set data'.format(legoID, set_data['weight']))
 				print('SET {0} -- {1} grams -- from cache'.format(legoID, string_weight))
@@ -280,7 +280,10 @@ class BrickLink(object):
 		for item in new_price_data['price_detail']:
 			new_prices.append(int(float(item['unit_price'])*100))
 		#print(new_prices)
-		new_median_price = int(statistics.median(new_prices))
+		if new_qty >= 1:
+			new_median_price = int(statistics.median(new_prices))
+		else:
+			new_median_price = -1
 		#print(new_median_price)
 		###################
 		# Used Sales
@@ -288,7 +291,10 @@ class BrickLink(object):
 		for item in used_price_data['price_detail']:
 			used_prices.append(int(float(item['unit_price'])*100))
 		#print(used_prices)
-		used_median_price = int(statistics.median(used_prices))
+		if used_qty >= 1:
+			used_median_price = int(statistics.median(used_prices))
+		else:
+			used_median_price = -1
 		#print(used_median_price)
 		###################
 		price_data = {
@@ -370,19 +376,19 @@ class BrickLink(object):
 
 	#============================
 	#============================
-	def getMinifigsFromSet(self, legoID, verbose=True):
+	def getMinifigIDsFromSet(self, legoID, verbose=True):
 		""" get list of minifig data dicts from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
 		###################
-		minifig_set_tree = self.bricklink_minifig_set_cache.get(legoID)
-		if self._check_if_data_valid(minifig_set_tree) is True:
+		minifig_id_tree = self.bricklink_minifig_set_cache.get(legoID)
+		if minifig_id_tree is not None and isinstance(minifig_id_tree, list):
 			if verbose is True:
-				print('SET {0} -- {1} minifigs -- from cache'.format(legoID, len(minifig_set_tree)))
-			return minifig_set_tree
+				print('SET {0} -- {1} minifigs -- from cache'.format(legoID, len(minifig_id_tree)))
+			return minifig_id_tree
 		###################
 		set_data = self.getSetData(legoID, verbose=False)
 		subsets_tree = self.getPartsFromSet(legoID, verbose=False)
-		minifig_set_tree = []
+		minifig_id_tree = []
 		key_list = ['name', 'no', 'image_url', 'year_released', 'weight']
 		for part in subsets_tree:
 			for entry in part['entries']:
@@ -390,20 +396,11 @@ class BrickLink(object):
 				if item['type'] != 'MINIFIG':
 					continue
 				minifigID = item['no']
-				#item_plus = self.getSetDataDirect(item['no'])
-				minifig_data = self.getMinifigData(minifigID)
-				minifig_dict = {}
-				for key in key_list:
-					minifig_dict[key] = minifig_data.get(key)
-				minifig_dict['set_num'] = legoID
-				minifig_dict['minifig_id'] = minifigID
-				minifig_dict['set_image_url'] = set_data['image_url']
-				for i in range(int(entry['quantity'])):
-					minifig_set_tree.append(minifig_dict)
+				minifig_id_tree.append(minifigID)
 		if verbose is True:
-			print('SET {0} -- {1} minifigs -- from BrickLink website'.format(legoID, len(minifig_set_tree)))
-		self.bricklink_minifig_set_cache[legoID] = minifig_set_tree
-		return minifig_set_tree
+			print('SET {0} -- {1} minifigs -- from BrickLink website'.format(legoID, len(minifig_id_tree)))
+		self.bricklink_minifig_set_cache[legoID] = minifig_id_tree
+		return minifig_id_tree
 
 	#============================
 	#============================
