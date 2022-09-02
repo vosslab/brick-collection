@@ -392,10 +392,8 @@ class BrickLink(object):
 				print('SET {0} -- {1} minifigs -- from cache'.format(legoID, len(minifig_id_tree)))
 			return minifig_id_tree
 		###################
-		set_data = self.getSetData(legoID, verbose=False)
 		subsets_tree = self.getPartsFromSet(legoID, verbose=False)
 		minifig_id_tree = []
-		key_list = ['name', 'no', 'image_url', 'year_released', 'weight']
 		for part in subsets_tree:
 			for entry in part['entries']:
 				item = entry['item']
