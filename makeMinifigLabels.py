@@ -108,6 +108,8 @@ def makeLabel(minifig_dict, price_dict):
 		minifig_name = new_name
 	new_median_price = float(price_dict['new_median_price'])
 	used_median_price = float(price_dict['used_median_price'])
+	new_qty = int(price_dict['new_qty'])
+	used_qty = int(price_dict['used_qty'])
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -122,8 +124,14 @@ def makeLabel(minifig_dict, price_dict):
 	latex_str += ('{\\sffamily\\scriptsize '
 		+minifig_name
 		+'}\\\\\n')
-	latex_str += '{\\scriptsize '
-	latex_str += '${0:.2f} new / ${1:.2f} used '.format(new_median_price, used_median_price)
+	latex_str += '{\\sffamily\\scriptsize '
+	if new_median_price > 0 and used_median_price > 0:
+		latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+		new_median_price/100., new_qty, used_median_price/100., used_qty)
+	elif new_qty > 0 and new_median_price > 0:
+		latex_str += '\${0:.2f} new ({1:d})'.format(new_median_price/100., new_qty)
+	elif used_qty > 0 and used_median_price > 0:
+		latex_str += '\${0:.2f} used ({1:d})'.format(used_median_price/100., used_qty)
 	latex_str += '}\\\\\n'
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
@@ -139,17 +147,17 @@ if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print("usage: ./makeLabels.py <bricklink minifig csv txt file>")
 		sys.exit(1)
-	minifigidFile = sys.argv[1]
-	if not os.path.isfile(minifigidFile):
+	minifig_data_file = sys.argv[1]
+	if not os.path.isfile(minifig_data_file):
 		print("usage: ./makeLabels.py <bricklink minifig csv txt file>")
 		sys.exit(1)
 
-	if 'minifig' not in minifigidFile.lower():
+	if 'minifig' not in minifig_data_file.lower():
 		print("WARNING: this program takes minifig data, not set data")
 		time.sleep(1)
 
 	minifigIDs = []
-	f = open(minifigidFile, "r")
+	f = open(minifig_data_file, "r")
 	line_count = 0
 	keys = None
 	minifig_info_tree = []
@@ -166,7 +174,7 @@ if __name__ == '__main__':
 		for index, val in enumerate(values):
 			key = keys[index]
 			minifig_dict[key] = val
-		if float(minifig_dict['weight']) > 10e6:
+		if float(minifig_dict['weight']) > 10:
 			print("TOO BIG: weight {3} skipping {0} from set {1}: {2}".format(
 				minifig_dict['no'], minifig_dict['set_num'], minifig_dict['name'][:60], minifig_dict['weight']))
 			continue
@@ -178,7 +186,7 @@ if __name__ == '__main__':
 	total_minifigs = len(minifig_info_tree)
 	print("Found {0} Minifigs to process".format(total_minifigs))
 
-	filename_root = os.path.splitext(minifigidFile)[0]
+	filename_root = os.path.splitext(minifig_data_file)[0]
 	outfile = "labels-" + filename_root + '.tex'
 	pdffile = "labels-" + filename_root + '.pdf'
 	f = open(outfile, 'w')
@@ -197,4 +205,5 @@ if __name__ == '__main__':
 				count//30 + 1, total_pages, count, total_minifigs))
 	f.write(latex_footer)
 	f.close()
+	BLwrap.close()
 	print('\n\nmogrify -verbose -trim images/minifig_*.jpg; \nxelatex {0}; open {1}'.format(outfile, pdffile))
