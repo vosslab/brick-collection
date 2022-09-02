@@ -44,8 +44,11 @@ class BrickLink(object):
 		for cache_name in self.data_caches:
 			file_name = 'CACHE/'+cache_name+'.yml'
 			if os.path.isfile(file_name):
-				cache_data =  yaml.safe_load( open(file_name, 'r') )
-				print('.. loaded {0} entires from {1}'.format(len(cache_data), file_name))
+				try:
+					cache_data =  yaml.safe_load( open(file_name, 'r') )
+					print('.. loaded {0} entires from {1}'.format(len(cache_data), file_name))
+				except IOError:
+					cache_data = {}
 			else:
 				cache_data = {}
 			setattr(self, cache_name, cache_data)
@@ -98,7 +101,13 @@ class BrickLink(object):
 			print("RESPONSE", response)
 			sys.exit(1)
 		data_dict = response['data']
-		data_dict['time'] = int(time.time())
+		try:
+			data_dict['time'] = int(time.time())
+		except TypeError:
+			print(type(data_dict))
+			print(url)
+			print(data_dict)
+			sys.exit(1)
 		return data_dict
 
 	#============================
