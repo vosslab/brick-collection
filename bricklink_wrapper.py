@@ -11,6 +11,18 @@ class BrickLink(object):
 	#============================
 	#============================
 	def __init__(self):
+		self.load_cache()
+		self.expire_time = 1000
+		self.data_refresh_cutoff = 0.1
+
+	#============================
+	#============================
+	def close(self):
+		self.save_cache()
+
+	#============================
+	#============================
+	def load_cache(self):
 		print('==== LOAD CACHE ====')
 		self.debug = True
 		self.api_data = yaml.safe_load(open('bricklink_api_private.yml', 'r'))
@@ -40,12 +52,6 @@ class BrickLink(object):
 		#print(getattr(self, 'bricklink_set_cache').keys())
 		print('==== END CACHE ====')
 
-
-	#============================
-	#============================
-	def close(self):
-		self.save_cache()
-
 	#============================
 	#============================
 	def save_cache(self):
@@ -63,6 +69,7 @@ class BrickLink(object):
 	#============================
 	#============================
 	def _check_lego_ID(self, legoID):
+		""" check to make sure number is valid """
 		if not isinstance(legoID, int):
 			legoID = int(legoID)
 		if legoID < 3000:
@@ -75,7 +82,9 @@ class BrickLink(object):
 
 	#============================
 	#============================
-	def bricklink_get(self, url):
+	def _bricklink_get(self, url):
+		""" common function for all API calls """
+		#random sleep of 0-1 seconds to help server load
 		time.sleep(random.random())
 		status, headers, response = self.bricklink_api.get(url)
 		error_msg = False
@@ -88,16 +97,41 @@ class BrickLink(object):
 			print("HEADERS", headers)
 			print("RESPONSE", response)
 			sys.exit(1)
-		return response['data']
+		data_dict = response['data']
+		data_dict['time'] = int(time.time())
+		return data_dict
+
+	#============================
+	#============================
+	def _check_if_data_valid(self, cache_data_dict):
+		""" common function of data expiration """
+		if cache_data_dict is None:
+			return False
+		###################
+		if cache_data_dict.get('time') is None:
+			return False
+		###################
+		if time.time() - int(cache_data_dict.get('time')) > self.expire_time:
+			return False
+		###################
+		if random.random() < self.data_refresh_cutoff:
+			# reset data to None, 10% of the time
+			# keeps the data fresh
+			return False
+		###################
+		return True
 
 	#============================
 	#============================
 	def getCategoryName(self, categoryID):
+		""" get the category name from BrickLink """
+		###################
+		# expire does NOT apply to category names
 		category_name = self.bricklink_category_cache.get(categoryID)
 		if category_name is not None:
 			return category_name
 		###################
-		category_data = self.bricklink_get('categories/{0}'.format(categoryID))
+		category_data = self._bricklink_get('categories/{0}'.format(categoryID))
 		###################
 		#print(category_data)
 		if category_data.get('parent_id') is not None and category_data.get('parent_id') > 1:
@@ -116,63 +150,47 @@ class BrickLink(object):
 	#============================
 	#============================
 	def getSetData(self, legoID, verbose=True):
+		""" get the set data from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
-		set_data = self.bricklink_set_cache.get(legoID)
-		if set_data is not None:
-			if verbose is True:
-				print('SET {0} -- {1} ({2}) -- from cache'.format(
-					set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
-			set_data['category_name'] = self.getCategoryName(set_data['category_id'])
-			set_data['set_num'] = legoID
-			self.bricklink_set_cache[legoID] = set_data
-			return set_data
-		###################
-		set_data = self.bricklink_get('items/set/{0}-1'.format(legoID))
-		###################
-		set_data['category_name'] = self.getCategoryName(set_data['category_id'])
-		if verbose is True:
-			print('SET {0} -- {1} ({2}) -- from BrickLink website'.format(
-				set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
-		set_data['time'] = int(time.time())
-		set_data['set_num'] = legoID
-		self.bricklink_set_cache[legoID] = set_data
+		setID = str(legoID) + '-1'
+		set_data = self.getSetDataDirect(setID, verbose)
 		return set_data
 
 	#============================
 	#============================
 	def getSetDataDirect(self, setID, verbose=True):
+		""" get the set data from BrickLink using a setID with hyphen, e.g. 71515-2 """
+		legoID = int(setID.split('-')[0])
+		self._check_lego_ID(legoID)
+		###################
 		set_data = self.bricklink_set_cache.get(setID)
-		if set_data is not None:
+		if self._check_if_data_valid(set_data) is True:
 			if verbose is True:
 				print('SET {0} -- {1} ({2}) -- from cache'.format(
 					set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
+			# update connected data
 			set_data['category_name'] = self.getCategoryName(set_data['category_id'])
-			self.bricklink_set_cache[legoID] = set_data
+			set_data['set_num'] = legoID
+			self.bricklink_set_cache[setID] = set_data
 			return set_data
 		###################
-		set_data = self.bricklink_get('items/set/{0}'.format(setID))
+		set_data = self._bricklink_get('items/set/{0}'.format(setID))
 		###################
-		set_data['category_name'] = self.getCategoryName(set_data['category_id'])
 		if verbose is True:
 			print('SET {0} -- {1} ({2}) -- from BrickLink website'.format(
 				set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
-
-		set_data['time'] = int(time.time())
-		self.bricklink_set_cache[legoID] = set_data
+		set_data['category_name'] = self.getCategoryName(set_data['category_id'])
+		set_data['set_num'] = legoID
+		self.bricklink_set_cache[setID] = set_data
 		return set_data
 
 	#============================
 	#============================
 	def getPartsFromSet(self, legoID, verbose=True):
+		""" get all the parts from a set from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
-		if self.debug is True:
-			## this is TOO BIG, cache just not worth it
-			subsets_tree = self.bricklink_subsets_cache.get(legoID)
-			if subsets_tree is not None and verbose is True:
-				print('SET {0} -- {1} parts -- from cache'.format(legoID, len(subsets_tree)))
-				return subsets_tree
 		###################
-		subsets_tree = self.bricklink_get('items/set/{0}-1/subsets'.format(legoID))
+		subsets_tree = self._bricklink_get('items/set/{0}-1/subsets'.format(legoID))
 		###################
 		if verbose is True:
 			print('SET {0} -- {1} parts -- from BrickLink website'.format(legoID, len(subsets_tree)))
@@ -184,14 +202,17 @@ class BrickLink(object):
 	#============================
 	#============================
 	def getSetBrickWeight(self, legoID, verbose=True):
+		""" custom function to add up the weight of all the parts in a set """
 		self._check_lego_ID(legoID)
 		set_data = self.getSetData(legoID, verbose=False)
+		###################
 		string_weight = self.bricklink_set_brick_weight_cache.get(legoID)
-		if string_weight is not None:
+		if self._check_if_data_valid(string_weight) is True:
 			if verbose is True:
 				print('SET {0} -- {1} grams -- from set data'.format(legoID, set_data['weight']))
 				print('SET {0} -- {1} grams -- from cache'.format(legoID, string_weight))
 			return string_weight
+		###################
 		subsets_tree = self.getPartsFromSet(legoID, verbose=False)
 		total_weight = 0
 		for part in subsets_tree:
@@ -223,48 +244,22 @@ class BrickLink(object):
 
 	#============================
 	#============================
-	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
-		self._check_lego_ID(legoID)
+	def _lookUpPriceDataCache(self, item_id, verbose=True):
+		""" common function for looking price data from cache """
 		###################
-		url = 'items/set/{0}-1/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
-			legoID, new_or_used, country_code, currency_code)
-		price_data = self.bricklink_get(url)
-		###################
-		avg_price = float(price_data['avg_price'])
-		qty = price_data['total_quantity']
-		if verbose is True and qty > 1:
-			print('SET {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
-				legoID, avg_price, qty))
-		return price_data
-
-	#============================
-	#============================
-	def getSetPriceData(self, legoID, verbose=False):
-		self._check_lego_ID(legoID)
-		price_data = self.lookUpPriceDataCache(legoID, verbose)
-		if price_data is not None:
-			return price_data
-		used_price_data = self.getSetPriceDetails(legoID, new_or_used='U', verbose=verbose)
-		new_price_data 	= self.getSetPriceDetails(legoID, new_or_used='N', verbose=verbose)
-		price_data = self.compilePriceData(legoID, new_price_data, used_price_data)
-		return price_data
-
-	#============================
-	#============================
-	def lookUpPriceDataCache(self, item_id, verbose=True):
 		price_data = self.bricklink_price_cache.get(item_id)
-		if random.random() > 0.1 and price_data is not None:
+		if self._check_if_data_valid(price_data) is True:
 			if verbose is True:
 				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- from cache'.format(
 					price_data.get('item_id'), float(price_data.get('new_median_price'))/100.,
 					float(price_data.get('used_median_price'))/100.,))
-			if time.time() - price_data['time'] < 10000:
-				return price_data
+			return price_data
+		###################
 		return None
 
 	#============================
 	#============================
-	def compilePriceData(self, item_id, new_price_data, used_price_data, verbose=True):
+	def _compilePriceData(self, item_id, new_price_data, used_price_data, verbose=True):
 		###################
 		used_avg_price 	= int(float(used_price_data['avg_price'])*100)
 		used_qty 		= int(used_price_data['total_quantity'])
@@ -306,39 +301,76 @@ class BrickLink(object):
 
 	#============================
 	#============================
-	def getMinifigPriceDetails(self, minifigID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+		""" get price details from BrickLink using an integer legoID """
+		self._check_lego_ID(legoID)
 		###################
-		url = 'items/minifig/{0}/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
-			minifigID, new_or_used, country_code, currency_code)
-		price_data = self.bricklink_get(url)
+		url = 'items/set/{0}-1/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
+			legoID, new_or_used, country_code, currency_code)
+		price_details = self._bricklink_get(url)
+		qty = price_details['total_quantity']
 		###################
-		avg_price = float(price_data['avg_price'])
-		qty = price_data['total_quantity']
 		if verbose is True and qty > 1:
-			print('MINIFIG {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
-				minifigID, avg_price, qty))
+			avg_price = float(price_details['avg_price'])
+			print('SET {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
+				legoID, avg_price, qty))
+		return price_details
+
+	#============================
+	#============================
+	def getSetPriceData(self, legoID, verbose=False):
+		""" compile price data from BrickLink using an integer legoID """
+		self._check_lego_ID(legoID)
+		###################
+		price_data = self._lookUpPriceDataCache(legoID, verbose)
+		if price_data is not None:
+			return price_data
+		###################
+		used_price_details = self.getSetPriceDetails(legoID, new_or_used='U', verbose=verbose)
+		new_price_details 	= self.getSetPriceDetails(legoID, new_or_used='N', verbose=verbose)
+		price_data = self._compilePriceData(legoID, new_price_details, used_price_details)
 		return price_data
 
 	#============================
 	#============================
+	def getMinifigPriceDetails(self, minifigID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+		""" get price details from BrickLink using an string minifigID """
+		###################
+		url = 'items/minifig/{0}/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
+			minifigID, new_or_used, country_code, currency_code)
+		price_details = self._bricklink_get(url)
+		###################
+		avg_price = float(price_details['avg_price'])
+		qty = price_details['total_quantity']
+		if verbose is True and qty > 1:
+			print('MINIFIG {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
+				minifigID, avg_price, qty))
+		return price_details
+
+	#============================
+	#============================
 	def getMinifigsPriceData(self, minifigID, verbose=False):
-		price_data = self.lookUpPriceDataCache(minifigID, verbose)
+		""" compile price data from BrickLink using an string minifigID """
+		price_data = self._lookUpPriceDataCache(minifigID, verbose)
 		if price_data is not None:
 			return price_data
-		used_price_data = self.getMinifigPriceDetails(minifigID, new_or_used='U', verbose=verbose)
-		new_price_data 	= self.getMinifigPriceDetails(minifigID, new_or_used='N', verbose=verbose)
-		price_data = self.compilePriceData(minifigID, new_price_data, used_price_data)
+		used_price_details = self.getMinifigPriceDetails(minifigID, new_or_used='U', verbose=verbose)
+		new_price_details 	= self.getMinifigPriceDetails(minifigID, new_or_used='N', verbose=verbose)
+		price_data = self._compilePriceData(minifigID, new_price_details, used_price_details)
 		return price_data
 
 	#============================
 	#============================
 	def getMinifigsFromSet(self, legoID, verbose=True):
+		""" get list of minifig data dicts from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
+		###################
 		minifig_set_tree = self.bricklink_minifig_set_cache.get(legoID)
-		if minifig_set_tree is not None:
+		if self._check_if_data_valid(minifig_set_tree) is True:
 			if verbose is True:
 				print('SET {0} -- {1} minifigs -- from cache'.format(legoID, len(minifig_set_tree)))
 			return minifig_set_tree
+		###################
 		set_data = self.getSetData(legoID, verbose=False)
 		subsets_tree = self.getPartsFromSet(legoID, verbose=False)
 		minifig_set_tree = []
@@ -357,7 +389,6 @@ class BrickLink(object):
 				minifig_dict['set_num'] = legoID
 				minifig_dict['minifig_id'] = minifigID
 				minifig_dict['set_image_url'] = set_data['image_url']
-
 				for i in range(int(entry['quantity'])):
 					minifig_set_tree.append(minifig_dict)
 		if verbose is True:
@@ -368,41 +399,42 @@ class BrickLink(object):
 	#============================
 	#============================
 	def getMinifigData(self, minifigID, verbose=True):
+		""" get individual minifig data from BrickLink using an string minifigID """
+
+		###################
 		minifig_data = self.bricklink_minifig_cache.get(minifigID)
-		if random.random() > 0.1 and minifig_data is not None:
+		if self._check_if_data_valid(minifig_data) is True:
 			if verbose is True:
 				print('MINIFIG {0} -- {1} ({2}) -- from cache'.format(
 					minifig_data.get('no'), minifig_data.get('name'), minifig_data.get('year_released'),))
 			return minifig_data
 		###################
-		minifig_data = self.bricklink_get('items/minifig/{0}'.format(minifigID))
+		minifig_data = self._bricklink_get('items/minifig/{0}'.format(minifigID))
 		###################
 		#print(minifig_data)
 		if verbose is True:
 			print('MINIFIG {0} -- {1} ({2}) -- from BrickLink website'.format(
 				minifigID, minifig_data.get('name')[:60], minifig_data.get('year_released'),))
-
-		minifig_data['time'] = int(time.time())
 		self.bricklink_minifig_cache[minifigID] = minifig_data
 		return minifig_data
 
 	#============================
 	#============================
 	def getPartData(self, partID, verbose=True):
+		""" get individual part data from BrickLink using an string minifigID """
+		###################
 		part_data = self.bricklink_part_cache.get(partID)
-		if part_data is not None:
+		if self._check_if_data_valid(part_data) is True:
 			if verbose is True:
 				print('PART {0} -- {1} ({2}) -- from cache'.format(
 					part_data.get('no'), part_data.get('name'), part_data.get('year_released'),))
 			return part_data
 		###################
-		part_data = self.bricklink_get('items/part/{0}'.format(partID))
+		part_data = self._bricklink_get('items/part/{0}'.format(partID))
 		###################
 		#print(part_data)
 		if verbose is True:
 			print('PART {0} -- {1} ({2}) -- from BrickLink website'.format(
 				partID, part_data.get('name'),part_data.get('year_released'),))
-
-		part_data['time'] = int(time.time())
 		self.bricklink_part_cache[partID] = part_data
 		return part_data
