@@ -12,13 +12,18 @@ class BrickLink(object):
 	#============================
 	def __init__(self):
 		self.load_cache()
-		self.expire_time = 1000
-		self.data_refresh_cutoff = 0.1
+		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
+		self.data_refresh_cutoff = 0.01 # 1% of the data is refreshed
+		self.api_calls = 0
+		self.api_log = []
 
 	#============================
 	#============================
 	def close(self):
 		self.save_cache()
+		#self.api_log.sort()
+		#print(self.api_log)
+		print("{0} api calls were made".format(self.api_calls))
 
 	#============================
 	#============================
@@ -89,6 +94,8 @@ class BrickLink(object):
 		#random sleep of 0-1 seconds to help server load
 		time.sleep(random.random())
 		status, headers, response = self.bricklink_api.get(url)
+		self.api_calls += 1
+		self.api_log.append(url)
 		error_msg = False
 		if ( response.get('data') is None
 			 or len(response.get('data')) == 0):
