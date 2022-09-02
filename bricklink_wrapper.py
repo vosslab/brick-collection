@@ -50,6 +50,8 @@ class BrickLink(object):
 	#============================
 	def save_cache(self):
 		print('==== SAVE CACHE ====')
+		if not os.path.isdir('CACHE'):
+			os.mkdir('CACHE')
 		for cache_name in self.data_caches:
 			file_name = 'CACHE/'+cache_name+'.yml'
 			cache_data = getattr(self, cache_name)
