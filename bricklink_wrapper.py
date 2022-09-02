@@ -38,7 +38,6 @@ class BrickLink(object):
 			'bricklink_price_cache',
 			'bricklink_set_brick_weight_cache',
 			'bricklink_set_cache',
-			'bricklink_subsets_cache',
 		]
 
 		for cache_name in self.data_caches:
