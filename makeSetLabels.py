@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import random
-import string
 import shutil # to save it locally
 import requests # to get image from the web
 
