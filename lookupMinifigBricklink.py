@@ -62,6 +62,8 @@ if __name__ == '__main__':
 			minifig_data = BLwrap.getMinifigData(minifigID)
 			price_data = BLwrap.getMinifigsPriceData(minifigID)
 			total_data = {**minifig_data, **price_data}
+			total_data['set_num'] = legoID
+			total_data['minifig_id'] = minifigID
 			line += 1
 			if line == 1:
 				allkeys = list(total_data.keys())
@@ -85,7 +87,6 @@ if __name__ == '__main__':
 			f.write("\n")
 			if line % 50 == 0:
 				BLwrap.save_cache()
-
 	f.close()
 	BLwrap.close()
 	sys.stderr.write("\n")
