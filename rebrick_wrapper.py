@@ -83,19 +83,7 @@ class ReBrick(object):
 		""" common function for all API calls """
 		#random sleep of 0-1 seconds to help server load
 		time.sleep(random.random())
-		status, headers, response = self.rebrick_api.get(url)
-		error_msg = False
-		if ( response.get('data') is None
-			 or len(response.get('data')) == 0):
-			error_msg = True
-		if error_msg is True:
-			print('URL', url)
-			print("STATUS", status)
-			print("HEADERS", headers)
-			print("RESPONSE", response)
-			sys.exit(1)
-		data_dict = response['data']
-		data_dict['time'] = int(time.time())
+		sys.exit(1)
 		return data_dict
 
 	#============================
