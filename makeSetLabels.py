@@ -6,6 +6,7 @@ import time
 import random
 import shutil # to save it locally
 import requests # to get image from the web
+import bricklink_wrapper
 
 latex_header = """
 \\documentclass[letterpaper]{article}% Avery 5163
@@ -79,7 +80,7 @@ def downloadImage(image_url, filename=None):
 
 #============================
 #============================
-def makeLabel(set_dict):
+def makeLabel(set_dict, price_dict):
 	"""
 	\begin{legocell}{set_10745-1.jpg}
 	Lego ID --- Title\\
@@ -97,6 +98,11 @@ def makeLabel(set_dict):
 	set_name = set_name.replace('#', '')
 	set_name = set_name.replace(' & ', ' and ')
 
+	new_median_price = float(price_dict['new_median_price'])
+	used_median_price = float(price_dict['used_median_price'])
+	new_qty = int(price_dict['new_qty'])
+	used_qty = int(price_dict['used_qty'])
+
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -111,10 +117,22 @@ def makeLabel(set_dict):
 		+'}\\\\\n')
 	latex_str += ('(\\textbf{'
 		+set_dict.get('year')
-		+'})\\\\\n')
+		+'})\n')
 	latex_str += ('{\\normalsize '
 		+set_dict.get('num_parts')
 		+' pieces}\\\\\n')
+	if new_median_price > 0 or used_median_price > 0:
+		time_str = time.strftime("%b %Y", time.gmtime())
+		latex_str += '{\\sffamily\\scriptsize '
+		latex_str += time_str + ': '
+		if new_median_price > 0 and used_median_price > 0:
+			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+			new_median_price/100., new_qty, used_median_price/100., used_qty)
+		elif new_qty > 0 and new_median_price > 0:
+			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_price/100., new_qty)
+		elif used_qty > 0 and used_median_price > 0:
+			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_price/100., used_qty)
+		latex_str += '}\\\\\n'
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
 	print('{0} -- {1} ({2})-- {3}'.format(
@@ -167,13 +185,17 @@ if __name__ == '__main__':
 	f.write(latex_header)
 	count = 0
 	total_pages = total_sets // 10 + 1
+	BLwrap = bricklink_wrapper.BrickLink()
 	for set_dict in set_info_tree:
 		count += 1
-		label = makeLabel(set_dict)
+		legoID = int(set_dict['set_num'].split('-')[0])
+		price_dict = BLwrap.getSetPriceData(legoID)
+		label = makeLabel(set_dict, price_dict)
 		f.write(label)
 		if count % 2 == 0:
 			f.write('% page {0} of {1} --- gap line --- count {2} of {3} ---\n'.format(
 				count//10 + 1, total_pages, count, total_sets))
 	f.write(latex_footer)
 	f.close()
+	BLwrap.close()
 	print('mogrify -verbose -trim images/set_*.jpg; \nxelatex {0}; open {1}'.format(outfile, pdffile))
