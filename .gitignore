@@ -4,6 +4,12 @@
 # Ignore YAML files used for config and cache
 *.yml
 
+# Ignore JSON files used for config and cache
+*.json
+
+# Ignore macos finder cache
+.DS_Store
+
 # Ignore CSV files used for input and output
 *.csv
 
