@@ -11,6 +11,12 @@ class BrickLink(object):
 	#============================
 	#============================
 	def __init__(self):
+		self.debug = True
+		self.api_data = yaml.safe_load(open('bricklink_api_private.yml', 'r'))
+		self.bricklink_api = bricklink.api.BrickLinkAPI(
+		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
+		  self.api_data['token_value'], self.api_data['token_secret'])
+
 		self.load_cache()
 		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
 		self.data_refresh_cutoff = 0.01 # 1% of the data is refreshed
@@ -29,11 +35,7 @@ class BrickLink(object):
 	#============================
 	def load_cache(self):
 		print('==== LOAD CACHE ====')
-		self.debug = True
-		self.api_data = yaml.safe_load(open('bricklink_api_private.yml', 'r'))
-		self.bricklink_api = bricklink.api.BrickLinkAPI(
-		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
-		  self.api_data['token_value'], self.api_data['token_secret'])
+
 
 		self.data_caches = [
 			'bricklink_category_cache',
