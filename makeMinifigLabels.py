@@ -124,15 +124,18 @@ def makeLabel(minifig_dict, price_dict):
 	latex_str += ('{\\sffamily\\scriptsize '
 		+minifig_name
 		+'}\\\\\n')
-	latex_str += '{\\sffamily\\scriptsize '
-	if new_median_price > 0 and used_median_price > 0:
-		latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
-		new_median_price/100., new_qty, used_median_price/100., used_qty)
-	elif new_qty > 0 and new_median_price > 0:
-		latex_str += '\${0:.2f} new ({1:d})'.format(new_median_price/100., new_qty)
-	elif used_qty > 0 and used_median_price > 0:
-		latex_str += '\${0:.2f} used ({1:d})'.format(used_median_price/100., used_qty)
-	latex_str += '}\\\\\n'
+	if new_median_price > 0 or used_median_price > 0:
+		time_str = time.strftime("%b %Y", time.gmtime())
+		latex_str += '{\\sffamily\\scriptsize '
+		latex_str += time_str + ': '
+		if new_median_price > 0 and used_median_price > 0:
+			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+			new_median_price/100., new_qty, used_median_price/100., used_qty)
+		elif new_qty > 0 and new_median_price > 0:
+			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_price/100., new_qty)
+		elif used_qty > 0 and used_median_price > 0:
+			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_price/100., used_qty)
+		latex_str += '}\\\\\n'
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
 	print('{0} -- {1} ({2}) -- {3}'.format(
