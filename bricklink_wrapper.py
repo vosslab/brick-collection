@@ -267,69 +267,113 @@ class BrickLink(object):
 		price_data = self.bricklink_price_cache.get(item_id)
 		if self._check_if_data_valid(price_data) is True:
 			if verbose is True:
-				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- from cache'.format(
-					price_data.get('item_id'), float(price_data.get('new_median_price'))/100.,
-					float(price_data.get('used_median_price'))/100.,))
+				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from cache'.format(
+					price_data.get('item_id'),
+					float(price_data.get( 'new_median_sale_price'))/100.,
+					float(price_data.get('used_median_sale_price'))/100.,
+					float(price_data.get( 'new_median_list_price'))/100.,
+					float(price_data.get('used_median_list_price'))/100.,
+				))
 			return price_data
 		###################
 		return None
 
 	#============================
 	#============================
-	def _compilePriceData(self, item_id, new_price_data, used_price_data, verbose=True):
+	def _compilePriceData(self, item_id, new_price_sale_details, used_price_sale_details,
+			new_price_list_details, used_price_list_details, verbose=True):
 		###################
-		used_avg_price 	= int(float(used_price_data['avg_price'])*100)
-		used_qty 		= int(used_price_data['total_quantity'])
-		new_avg_price 	= int(float(new_price_data['avg_price'])*100)
-		new_qty 		= int(new_price_data['total_quantity'])
+		new_avg_sale_price 	= int(float(new_price_sale_details['avg_price'])*100)
+		new_sale_qty 		= int(new_price_sale_details['total_quantity'])
+		used_avg_sale_price = int(float(used_price_sale_details['avg_price'])*100)
+		used_sale_qty 		= int(used_price_sale_details['total_quantity'])
+		new_avg_list_price 	= int(float(new_price_list_details['avg_price'])*100)
+		new_list_qty 		= int(new_price_list_details['total_quantity'])
+		used_avg_list_price = int(float(used_price_list_details['avg_price'])*100)
+		used_list_qty 		= int(used_price_list_details['total_quantity'])
 		###################
 		# New Sales
-		new_prices = []
-		for item in new_price_data['price_detail']:
-			new_prices.append(int(float(item['unit_price'])*100))
-		#print(new_prices)
-		if new_qty >= 1:
-			new_median_price = int(statistics.median(new_prices))
+		if new_sale_qty >= 1:
+			new_sale_prices = []
+			for item in new_price_sale_details['price_detail']:
+				new_sale_prices.append(int(float(item['unit_price'])*100))
+			new_median_sale_price = int(statistics.median(new_sale_prices))
 		else:
-			new_median_price = -1
-		#print(new_median_price)
+			new_median_sale_price = -1
+		del new_sale_prices
 		###################
 		# Used Sales
-		used_prices = []
-		for item in used_price_data['price_detail']:
-			used_prices.append(int(float(item['unit_price'])*100))
-		#print(used_prices)
-		if used_qty >= 1:
-			used_median_price = int(statistics.median(used_prices))
+		if used_sale_qty >= 1:
+			used_sale_prices = []
+			for item in used_price_sale_details['price_detail']:
+				used_sale_prices.append(int(float(item['unit_price'])*100))
+			used_median_sale_price = int(statistics.median(used_sale_prices))
 		else:
-			used_median_price = -1
-		#print(used_median_price)
+			used_median_sale_price = -1
+		del used_sale_prices
+		###################
+		# New Sales
+		if new_list_qty >= 1:
+			new_list_prices = []
+			for item in new_price_list_details['price_detail']:
+				new_list_prices.append(int(float(item['unit_price'])*100))
+			new_median_list_price = int(statistics.median(new_list_prices))
+		else:
+			new_median_list_price = -1
+		del new_list_prices
+		###################
+		# Used Sales
+		if used_list_qty >= 1:
+			used_list_prices = []
+			for item in used_price_list_details['price_detail']:
+				used_list_prices.append(int(float(item['unit_price'])*100))
+			used_median_list_price = int(statistics.median(used_list_prices))
+		else:
+			used_median_list_price = -1
+		del used_list_prices
 		###################
 		price_data = {
-			'item_id':				item_id,
-			'new_avg_price': 		new_avg_price,
-			'new_median_price': 	new_median_price,
-			'new_qty': 				new_qty,
-			'used_avg_price': 		used_avg_price,
-			'used_median_price': 	used_median_price,
-			'used_qty': 			used_qty,
+			'item_id':					item_id,
+			##=========
+			'new_avg_sale_price': 		new_avg_sale_price,
+			'new_median_sale_price': 	new_median_sale_price,
+			'new_sale_qty': 			new_sale_qty,
+			##=========
+			'used_avg_sale_price': 	used_avg_sale_price,
+			'used_median_sale_price': 	used_median_sale_price,
+			'used_sale_qty': 			used_sale_qty,
+			##=========
+			'new_avg_list_price': 		new_avg_list_price,
+			'new_median_list_price': 	new_median_list_price,
+			'new_list_qty': 			new_list_qty,
+			##=========
+			'used_avg_list_price': 		used_avg_list_price,
+			'used_median_list_price': 	used_median_list_price,
+			'used_list_qty': 			used_list_qty,
+			##=========
 			'time':					int(time.time()),
 		}
 		if verbose is True:
-			print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- from BrickLink'.format(
-				price_data.get('item_id'), float(price_data.get('new_median_price'))/100.,
-				float(price_data.get('used_median_price'))/100.,))
+			print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from BrickLink'.format(
+				price_data.get('item_id'),
+				float(price_data.get( 'new_median_sale_price'))/100.,
+				float(price_data.get('used_median_sale_price'))/100.,
+				float(price_data.get( 'new_median_list_price'))/100.,
+				float(price_data.get('used_median_list_price'))/100.,
+			))
 		self.bricklink_price_cache[item_id] = price_data
 		return price_data
 
 	#============================
 	#============================
-	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+	def getSetPriceDetails(self, legoID, guide_type='sold', new_or_used='U',
+			country_code='US', currency_code='USD', verbose=True):
 		""" get price details from BrickLink using an integer legoID """
+		#https://www.bricklink.com/v3/api.page?page=get-price-guide
 		self._check_lego_ID(legoID)
 		###################
-		url = 'items/set/{0}-1/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
-			legoID, new_or_used, country_code, currency_code)
+		url = 'items/set/{0}-1/price?guide_type={1}&new_or_used={2}&country_code={3}&currency_code={4}'.format(
+			legoID, guide_type, new_or_used, country_code, currency_code)
 		price_details = self._bricklink_get(url)
 		qty = price_details['total_quantity']
 		###################
@@ -349,18 +393,23 @@ class BrickLink(object):
 		if price_data is not None:
 			return price_data
 		###################
-		used_price_details = self.getSetPriceDetails(legoID, new_or_used='U', verbose=verbose)
-		new_price_details 	= self.getSetPriceDetails(legoID, new_or_used='N', verbose=verbose)
-		price_data = self._compilePriceData(legoID, new_price_details, used_price_details)
+		used_price_sale_details = self.getSetPriceDetails(legoID, guide_type='sold', new_or_used='U', verbose=verbose)
+		new_price_sale_details 	= self.getSetPriceDetails(legoID, guide_type='sold', new_or_used='N', verbose=verbose)
+		used_price_list_details = self.getSetPriceDetails(legoID, guide_type='stock', new_or_used='U', verbose=verbose)
+		new_price_list_details 	= self.getSetPriceDetails(legoID, guide_type='stock', new_or_used='N', verbose=verbose)
+		price_data = self._compilePriceData(legoID,
+			new_price_sale_details, used_price_sale_details,
+			new_price_list_details, used_price_list_details)
 		return price_data
 
 	#============================
 	#============================
-	def getMinifigPriceDetails(self, minifigID, new_or_used='U', country_code='US', currency_code='USD', verbose=True):
+	def getMinifigPriceDetails(self, minifigID, guide_type='sold', new_or_used='U',
+			country_code='US', currency_code='USD', verbose=True):
 		""" get price details from BrickLink using an string minifigID """
 		###################
-		url = 'items/minifig/{0}/price?guide_type=sold&new_or_used={1}&country_code={2}&currency_code={3}'.format(
-			minifigID, new_or_used, country_code, currency_code)
+		url = 'items/minifig/{0}/price?guide_type={1}&new_or_used={2}&country_code={3}&currency_code={4}'.format(
+			minifigID, guide_type, new_or_used, country_code, currency_code)
 		price_details = self._bricklink_get(url)
 		###################
 		avg_price = float(price_details['avg_price'])
@@ -377,9 +426,13 @@ class BrickLink(object):
 		price_data = self._lookUpPriceDataCache(minifigID, verbose)
 		if price_data is not None:
 			return price_data
-		used_price_details = self.getMinifigPriceDetails(minifigID, new_or_used='U', verbose=verbose)
-		new_price_details 	= self.getMinifigPriceDetails(minifigID, new_or_used='N', verbose=verbose)
-		price_data = self._compilePriceData(minifigID, new_price_details, used_price_details)
+		used_price_sale_details = self.getMinifigPriceDetails(minifigID, guide_type='sold', new_or_used='U', verbose=verbose)
+		new_price_sale_details 	= self.getMinifigPriceDetails(minifigID, guide_type='sold', new_or_used='N', verbose=verbose)
+		used_price_list_details = self.getMinifigPriceDetails(minifigID, guide_type='stock', new_or_used='U', verbose=verbose)
+		new_price_list_details 	= self.getMinifigPriceDetails(minifigID, guide_type='stock', new_or_used='N', verbose=verbose)
+		price_data = self._compilePriceData(minifigID,
+			new_price_sale_details, used_price_sale_details,
+			new_price_list_details, used_price_list_details)
 		return price_data
 
 	#============================
