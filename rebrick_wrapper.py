@@ -17,7 +17,7 @@ class ReBrick(wrapper_base.BaseWrapperClass):
 		  self.api_data['token_value'], self.api_data['token_secret'])
 
 		self.data_caches = {
-			'rebrick_theme_cache': 	'yaml',
+			'rebrick_theme_cache': 	'yml',
 			'rebrick_set_cache':	'json',
 		}
 		self.start()

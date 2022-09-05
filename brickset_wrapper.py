@@ -14,22 +14,24 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 	def __init__(self):
 		self.debug = True
 		self.api_data = yaml.safe_load(open('brickset_api_private.yml', 'r'))
-		self.web_services_key = self.api_data['web_services_key_2']
-		#self.cache_format = 'yml'
-		self.cache_format = 'json'
+		self.api_key = self.api_data['web_services_key_2']
 		#print(self.web_services_key)
 		#self.user_token = ''
-		brickse.init(self.web_services_key)
+		brickse.init(self.api_key)
 
-		self.load_cache()
-		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
-		self.data_refresh_cutoff = 0.01 # 1% of the data is refreshed
-		self.api_calls = 0
-		self.api_log = []
+		# YAML, depending on how you use it, can be more readable than JSON
+		# YAML like PYHTON uses indentation to indicate levels
+		# YAML has a ton of features, including comments and relational anchors
+		# YAML can sometimes allow an attacker to execute arbitrary code
+
+		# JSON is much faster because of significantly less features
+		# JSON is a subset of JavaScript with bracketed syntax
+		# JSON uses less characters because it doesn't use whitespace to represent hierarchy
+		# JSON allows duplicate keys, which is invalid PYTHON and YAML
 
 		self.data_caches = {
-			'brickset_category_cache': 		'yaml',
-			'brickset_msrp_cache': 			'yaml',
+			'brickset_category_cache': 		'yml',
+			'brickset_msrp_cache': 			'yml',
 
 			'brickset_set_cache': 			'json',
 			'brickset_part_cache': 			'json',

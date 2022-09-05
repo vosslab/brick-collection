@@ -19,9 +19,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		  self.api_data['token_value'], self.api_data['token_secret'])
 
 		self.data_caches = {
-			'bricklink_category_cache': 		'yaml',
-			'bricklink_price_cache': 			'yaml',
-			'bricklink_set_brick_weight_cache': 'yaml',
+			'bricklink_category_cache': 		'yml',
+			'bricklink_price_cache': 			'yml',
+			'bricklink_set_brick_weight_cache': 'yml',
 
 			'bricklink_minifig_cache': 			'json',
 			'bricklink_minifig_set_cache': 		'json',
@@ -426,3 +426,4 @@ if __name__ == "__main__":
 	price_data = BL.getSetPriceData(75151)
 	import pprint
 	pprint.pprint(price_data)
+	BL.close()
