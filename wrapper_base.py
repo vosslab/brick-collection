@@ -11,6 +11,21 @@ class BaseWrapperClass(object):
 	#============================
 	def __init__(self):
 		self.api_key = None
+
+		# YAML is more readable than JSON
+		# YAML like PYHTON uses indentation to indicate levels
+		# YAML has a ton of features, including comments and relational anchors
+		# YAML can sometimes allow an attacker to execute arbitrary code
+
+		# JSON is much faster because of significantly less features
+		# JSON is a subset of JavaScript with bracketed syntax
+		# JSON uses less characters because it doesn't use whitespace to represent hierarchy
+		# JSON allows duplicate keys, which is invalid PYTHON and YAML
+		# JSON is prferred by web developers for APIs, many web programmers are not aware YAML exists
+
+		# When the CACHE file is BIG and contains lots of details... use JSON
+		# When the CACHE file is SIMPLE and might require EDITING... use YAML/YML
+
 		self.data_caches = {
 			'wrapper_test_json_cache': 'json',
 			'wrapper_test_yaml_cache': 'yml',

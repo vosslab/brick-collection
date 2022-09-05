@@ -19,16 +19,6 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		#self.user_token = ''
 		brickse.init(self.api_key)
 
-		# YAML, depending on how you use it, can be more readable than JSON
-		# YAML like PYHTON uses indentation to indicate levels
-		# YAML has a ton of features, including comments and relational anchors
-		# YAML can sometimes allow an attacker to execute arbitrary code
-
-		# JSON is much faster because of significantly less features
-		# JSON is a subset of JavaScript with bracketed syntax
-		# JSON uses less characters because it doesn't use whitespace to represent hierarchy
-		# JSON allows duplicate keys, which is invalid PYTHON and YAML
-
 		self.data_caches = {
 			'brickset_category_cache': 		'yml',
 			'brickset_msrp_cache': 			'yml',
