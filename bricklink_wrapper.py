@@ -1,13 +1,14 @@
+#!/usr/bin/env python3
 
-import os
 import sys
 import time
 import yaml
 import random
 import statistics
+import wrapper_base
 import bricklink.api
 
-class BrickLink(object):
+class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	#============================
 	def __init__(self):
@@ -17,77 +18,17 @@ class BrickLink(object):
 		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
 		  self.api_data['token_value'], self.api_data['token_secret'])
 
-		self.load_cache()
-		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
-		self.data_refresh_cutoff = 0.01 # 1% of the data is refreshed
-		self.api_calls = 0
-		self.api_log = []
+		self.data_caches = {
+			'bricklink_category_cache': 		'yaml',
+			'bricklink_price_cache': 			'yaml',
+			'bricklink_set_brick_weight_cache': 'yaml',
 
-	#============================
-	#============================
-	def close(self):
-		self.save_cache()
-		#self.api_log.sort()
-		#print(self.api_log)
-		print("{0} api calls were made".format(self.api_calls))
-
-	#============================
-	#============================
-	def load_cache(self):
-		print('==== LOAD CACHE ====')
-
-
-		self.data_caches = [
-			'bricklink_category_cache',
-			'bricklink_minifig_cache',
-			'bricklink_minifig_set_cache',
-			'bricklink_part_cache',
-			'bricklink_price_cache',
-			'bricklink_set_brick_weight_cache',
-			'bricklink_set_cache',
-		]
-
-		for cache_name in self.data_caches:
-			file_name = 'CACHE/'+cache_name+'.yml'
-			if os.path.isfile(file_name):
-				try:
-					cache_data =  yaml.safe_load( open(file_name, 'r') )
-					print('.. loaded {0} entires from {1}'.format(len(cache_data), file_name))
-				except IOError:
-					cache_data = {}
-			else:
-				cache_data = {}
-			setattr(self, cache_name, cache_data)
-		#print(getattr(self, 'bricklink_set_cache').keys())
-		print('==== END CACHE ====')
-
-	#============================
-	#============================
-	def save_cache(self):
-		print('==== SAVE CACHE ====')
-		if not os.path.isdir('CACHE'):
-			os.mkdir('CACHE')
-		for cache_name in self.data_caches:
-			file_name = 'CACHE/'+cache_name+'.yml'
-			cache_data = getattr(self, cache_name)
-			if len(cache_data) > 0:
-				yaml.dump( cache_data, open( file_name, 'w') )
-				print('.. wrote {0} entires to {1}'.format(len(cache_data), file_name))
-		print('==== END CACHE ====')
-
-	#============================
-	#============================
-	def _check_lego_ID(self, legoID):
-		""" check to make sure number is valid """
-		if not isinstance(legoID, int):
-			legoID = int(legoID)
-		if legoID < 3000:
-			print("Error: Lego set ID is too small: {0}".format(legoID))
-			sys.exit(1)
-		elif legoID > 99999:
-			print("Error: Lego set ID is too big: {0}".format(legoID))
-			sys.exit(1)
-		return True
+			'bricklink_minifig_cache': 			'json',
+			'bricklink_minifig_set_cache': 		'json',
+			'bricklink_part_cache': 			'json',
+			'bricklink_set_cache': 				'json',
+		}
+		self.start()
 
 	#============================
 	#============================
@@ -112,31 +53,6 @@ class BrickLink(object):
 		if isinstance(data, dict):
 			data['time'] = int(time.time())
 		return data
-
-	#============================
-	#============================
-	def _check_if_data_valid(self, cache_data_dict):
-		""" common function of data expiration """
-		if cache_data_dict is None:
-			return False
-		###################
-		if not isinstance(cache_data_dict, dict):
-			print(cache_data_dict)
-			print("WRONG CACHE type, must be dict!!!")
-			print(type(cache_data_dict))
-			return False
-		if cache_data_dict.get('time') is None:
-			return False
-		###################
-		if time.time() - int(cache_data_dict.get('time')) > self.expire_time:
-			return False
-		###################
-		if random.random() < self.data_refresh_cutoff:
-			# reset data to None, 10% of the time
-			# keeps the data fresh
-			return False
-		###################
-		return True
 
 	#============================
 	#============================
@@ -503,3 +419,10 @@ class BrickLink(object):
 				partID, part_data.get('name'),part_data.get('year_released'),))
 		self.bricklink_part_cache[partID] = part_data
 		return part_data
+
+
+if __name__ == "__main__":
+	BL = BrickLink()
+	price_data = BL.getSetPriceData(75151)
+	import pprint
+	pprint.pprint(price_data)
