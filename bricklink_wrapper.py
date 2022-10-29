@@ -214,9 +214,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			for item in new_price_sale_details['price_detail']:
 				new_sale_prices.append(int(float(item['unit_price'])*100))
 			new_median_sale_price = int(statistics.median(new_sale_prices))
+			del new_sale_prices
 		else:
 			new_median_sale_price = -1
-		del new_sale_prices
 		###################
 		# Used Sales
 		if used_sale_qty >= 1:
@@ -224,9 +224,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			for item in used_price_sale_details['price_detail']:
 				used_sale_prices.append(int(float(item['unit_price'])*100))
 			used_median_sale_price = int(statistics.median(used_sale_prices))
+			del used_sale_prices
 		else:
 			used_median_sale_price = -1
-		del used_sale_prices
 		###################
 		# New Sales
 		if new_list_qty >= 1:
@@ -234,9 +234,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			for item in new_price_list_details['price_detail']:
 				new_list_prices.append(int(float(item['unit_price'])*100))
 			new_median_list_price = int(statistics.median(new_list_prices))
+			del new_list_prices
 		else:
 			new_median_list_price = -1
-		del new_list_prices
 		###################
 		# Used Sales
 		if used_list_qty >= 1:
@@ -244,9 +244,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			for item in used_price_list_details['price_detail']:
 				used_list_prices.append(int(float(item['unit_price'])*100))
 			used_median_list_price = int(statistics.median(used_list_prices))
+			del used_list_prices
 		else:
 			used_median_list_price = -1
-		del used_list_prices
 		###################
 		price_data = {
 			'item_id':					item_id,
