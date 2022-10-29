@@ -91,6 +91,8 @@ def makeLabel(minifig_dict, price_dict):
 	set_num = minifig_dict.get('set_num')
 	minifig_id = minifig_dict.get('minifig_id')
 	print('-----\nProcessing Minifig {0} from Set {1}'.format(minifig_id, set_num))
+	if not os.path.isdir('images'):
+		os.mkdir('images')
 	filename = "images/minifig_{0}.jpg".format(minifig_id)
 	image_url = minifig_dict.get('image_url')
 	image_url = 'https:' + image_url
@@ -106,10 +108,10 @@ def makeLabel(minifig_dict, price_dict):
 			new_name += bits[i] + ' '
 			i += 1
 		minifig_name = new_name
-	new_median_price = float(price_dict['new_median_price'])
-	used_median_price = float(price_dict['used_median_price'])
-	new_qty = int(price_dict['new_qty'])
-	used_qty = int(price_dict['used_qty'])
+	new_median_price = float(price_dict['new_median_sale_price'])
+	used_median_price = float(price_dict['used_median_sale_price'])
+	new_qty = int(price_dict['new_sale_qty'])
+	used_qty = int(price_dict['used_sale_qty'])
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
