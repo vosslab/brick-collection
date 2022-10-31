@@ -98,11 +98,6 @@ def makeLabel(set_dict, price_dict):
 	set_name = set_name.replace('#', '')
 	set_name = set_name.replace(' & ', ' and ')
 
-	new_median_price = float(price_dict['new_median_price'])
-	used_median_price = float(price_dict['used_median_price'])
-	new_qty = int(price_dict['new_qty'])
-	used_qty = int(price_dict['used_qty'])
-
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
@@ -121,18 +116,43 @@ def makeLabel(set_dict, price_dict):
 	latex_str += ('{\\normalsize '
 		+set_dict.get('num_parts')
 		+' pieces}\\\\\n')
-	if new_median_price > 0 or used_median_price > 0:
-		time_str = time.strftime("%b %Y", time.gmtime())
+
+	### SALES INFO
+	new_median_sale_price = float(price_dict['new_median_sale_price'])
+	used_median_sale_price = float(price_dict['used_median_sale_price'])
+	if new_median_sale_price > 0 or used_median_sale_price > 0:
+		new_sale_qty = int(price_dict['new_sale_qty'])
+		used_sale_qty = int(price_dict['used_sale_qty'])
+
 		latex_str += '{\\sffamily\\scriptsize '
-		latex_str += time_str + ': '
-		if new_median_price > 0 and used_median_price > 0:
+		latex_str += 'sale: '
+		if new_median_sale_price > 0 and used_median_sale_price > 0:
 			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
-			new_median_price/100., new_qty, used_median_price/100., used_qty)
-		elif new_qty > 0 and new_median_price > 0:
-			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_price/100., new_qty)
-		elif used_qty > 0 and used_median_price > 0:
-			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_price/100., used_qty)
+			new_median_sale_price/100., new_sale_qty, used_median_sale_price/100., used_sale_qty)
+		elif new_sale_qty > 0 and new_median_sale_price > 0:
+			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_sale_price/100., new_sale_qty)
+		elif used_sale_qty > 0 and used_median_sale_price > 0:
+			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_sale_price/100., used_sale_qty)
 		latex_str += '}\\\\\n'
+
+	### LIST INFO
+	new_median_list_price = float(price_dict['new_median_list_price'])
+	used_median_list_price = float(price_dict['used_median_list_price'])
+	if new_median_list_price > 0 or used_median_list_price > 0:
+		new_list_qty = int(price_dict['new_list_qty'])
+		used_list_qty = int(price_dict['used_list_qty'])
+		latex_str += '{\\sffamily\\scriptsize '
+		latex_str += 'list: '
+		if new_median_list_price > 0 and used_median_list_price > 0:
+			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+			new_median_list_price/100., new_list_qty, used_median_list_price/100., used_list_qty)
+		elif new_list_qty > 0 and new_median_list_price > 0:
+			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_list_price/100., new_list_qty)
+		elif used_list_qty > 0 and used_median_list_price > 0:
+			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_list_price/100., used_list_qty)
+		latex_str += '}\\\\\n'
+
+
 	latex_str += '\\end{legocell}\n'
 	#print(latex_str)
 	print('{0} -- {1} ({2})-- {3}'.format(
