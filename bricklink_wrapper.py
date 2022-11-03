@@ -91,6 +91,16 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	def getSetDataDetails(self, legoID, verbose=True):
+		""" get the set data from BrickLink using an integer legoID """
+		self._check_lego_ID(legoID)
+		setID = str(legoID) + '-1'
+		set_data = self.getSetDataDirect(setID, verbose)
+		price_dict = self.getSetPriceData(legoID)
+		return set_data
+
+	#============================
+	#============================
 	def getSetDataDirect(self, setID, verbose=True):
 		""" get the set data from BrickLink using a setID with hyphen, e.g. 71515-2 """
 		legoID = int(setID.split('-')[0])

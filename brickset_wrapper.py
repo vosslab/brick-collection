@@ -96,11 +96,22 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 			return msrp
 		###################
 		set_data = self._get_set(setID)
-		msrp = set_data['LEGOCom'][region]['retailPrice']
+		legocom = set_data.get('LEGOCom')
+		region = legocom.get(region)
+		if region is None:
+			#print(', '.join(legocom.keys()))
+			return None
+		price = region.get('retailPrice')
+		if price is None:
+			#print(', '.join(legocom.keys()))
+			#print(type(region), len(region.keys()))
+			#print(', '.join(region.keys()))
+			return None
+		msrp = price
 		#save value as integer in cents
 		msrp = int(round(msrp*100))
 		self.brickset_msrp_cache[setID] = msrp
-		return set_data
+		return msrp
 
 	#============================
 	#============================

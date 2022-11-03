@@ -187,20 +187,33 @@ if __name__ == '__main__':
 	f = open(minifig_data_file, "r")
 	line_count = 0
 	keys = None
+	delimiter = None
 	minifig_info_tree = []
 	for line in f:
 		sline = line.strip()
 		line_count += 1
 		if line_count == 1:
+			if sline.count(',') > sline.count('\t'):
+				delimiter = ','
+			else:
+				delimiter = '\t'
 			#setup keys
-			keys = sline.split('\t')
+			#keys = sline.split('\t')
+			keys = sline.split(delimiter)
 			print(keys)
 			continue
 		minifig_dict = {}
-		values = sline.split('\t')
+		#values = sline.split('\t')
+		values = sline.split(delimiter)
 		for index, val in enumerate(values):
 			key = keys[index]
 			minifig_dict[key] = val
+		if minifig_dict.get('weight') is None:
+			import pprint
+			pprint.pprint(minifig_dict)
+			print('')
+			print(minifig_dict.keys())
+			sys.exit(1)
 		if float(minifig_dict['weight']) > 10:
 			print("TOO BIG: weight {3} skipping {0} from set {1}: {2}".format(
 				minifig_dict['no'], minifig_dict['set_num'], minifig_dict['name'][:60], minifig_dict['weight']))
