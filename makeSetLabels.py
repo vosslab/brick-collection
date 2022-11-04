@@ -90,6 +90,8 @@ def makeLabel(set_dict, price_dict):
 	set_id = set_dict.get('set_num')
 	lego_id = int(set_id.split('-')[0])
 	print('Processing Set {0}'.format(lego_id))
+	if not os.path.isdir('images'):
+		os.mkdir('images')
 	filename = "images/set_{0}.jpg".format(set_id)
 	image_url = set_dict.get('set_img_url')
 	downloadImage(image_url, filename)
