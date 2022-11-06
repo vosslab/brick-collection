@@ -220,4 +220,4 @@ if __name__ == '__main__':
 	f.write(latex_footer)
 	f.close()
 	BLwrap.close()
-	print('mogrify -verbose -trim images/set_*.jpg; \nxelatex {0}; open {1}'.format(outfile, pdffile))
+	print('mogrify -verbose -trim images/set_*.jpg; \nxelatex {0}; \nopen {1}'.format(outfile, pdffile))
