@@ -21,12 +21,12 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 
 		self.data_caches = {
 			'rebrick_theme_cache': 			'yml',
-
 			'rebrick_set_cache': 			'json',
 			'rebrick_part_cache': 			'json',
 			'rebrick_minifig_cache': 		'json',
 			'rebrick_minifig_set_cache': 	'json',
 		}
+		self.api_calls = 0
 		self.start()
 
 	#============================
@@ -38,6 +38,7 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			return theme_name
 		###################
 		time.sleep(random.random())
+		self.api_calls += 1
 		response = rebrick.lego.get_theme(themeID)
 		theme_data = json.loads(response.read())
 		#print(theme_data)
@@ -71,6 +72,7 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			return set_data
 		###################
 		time.sleep(random.random())
+		self.api_calls += 1
 		response = rebrick.lego.get_set(legoID)
 		set_data = json.loads(response.read())
 		set_data['theme_name'] = self.getThemeName(set_data['theme_id'])
@@ -78,6 +80,8 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			set_data.get('set_num'), set_data.get('name'), set_data.get('year'),))
 		set_data['time'] = int(time.time())
 		self.rebrick_set_cache[setID] = set_data
+		if self.api_calls % 25 == 0:
+			self.save_cache()
 		return set_data
 
 	#============================
