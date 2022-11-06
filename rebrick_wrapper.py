@@ -38,8 +38,8 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			return theme_name
 		###################
 		time.sleep(random.random())
-		self.api_calls += 1
 		response = rebrick.lego.get_theme(themeID)
+		self.api_calls += 1
 		theme_data = json.loads(response.read())
 		#print(theme_data)
 		if theme_data.get('parent_id') is not None:
@@ -72,8 +72,8 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			return set_data
 		###################
 		time.sleep(random.random())
-		self.api_calls += 1
 		response = rebrick.lego.get_set(legoID)
+		self.api_calls += 1
 		set_data = json.loads(response.read())
 		set_data['theme_name'] = self.getThemeName(set_data['theme_id'])
 		print('SET {0} -- {1} ({2}) -- from Rebrick website'.format(
