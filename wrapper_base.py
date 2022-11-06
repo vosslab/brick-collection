@@ -78,11 +78,14 @@ class BaseWrapperClass(object):
 
 	#============================
 	#============================
-	def save_cache(self):
+	def save_cache(self, single_cache_name=None):
 		print('==== SAVE CACHE ====')
 		if not os.path.isdir('CACHE'):
 			os.mkdir('CACHE')
-		for cache_name,cache_format in self.data_caches.items():
+		for cache_name, cache_format in self.data_caches.items():
+			if single_cache_name is not None and single_cache_name != cache_name:
+				#print('.. skipping cache: ', cache_name)
+				continue
 			if cache_format == 'yaml':
 				cache_format = 'yml'
 			t0 = time.time()
@@ -128,12 +131,15 @@ class BaseWrapperClass(object):
 			print(type(cache_data_dict))
 			return False
 		if cache_data_dict.get('time') is None:
+			print('... no time in cache')
 			return False
 		###################
 		if time.time() - int(cache_data_dict.get('time')) > self.expire_time:
+			print('... cache expired')
 			return False
 		###################
 		if random.random() < self.data_refresh_cutoff:
+			print('... random data refresh')
 			# reset data to None, 10% of the time
 			# keeps the data fresh
 			return False
