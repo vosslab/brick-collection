@@ -92,12 +92,18 @@ if __name__ == '__main__':
 			continue
 		legoID = int(setID.split('-')[0])
 		data = rbw.getSetDataDirect(setID)
-		data |= bsw.getSetDataDirect(setID)
+		bsw_data = bsw.getSetDataDirect(setID)
+		if bsw_data is not None:
+			data |= bsw_data
 		data |= blw.getSetDataDirect(setID)
 		data |= blw.getSetDataDirect(setID)
 		data |= blw.getSetPriceData(legoID)
 		data['msrp'] = bsw.getSetMSRP(legoID)
 		#print(data)
+		if line % 25 == 0:
+			rbw.save_cache()
+			bsw.save_cache()
+			blw.save_cache()
 		data = flatten_dict(data)
 		if line == 1:
 			allkeys = list(data.keys())
