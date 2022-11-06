@@ -18,6 +18,7 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		#print(self.web_services_key)
 		#self.user_token = ''
 		brickse.init(self.api_key)
+		self.api_daily_limit_exceeded = False
 
 		self.data_caches = {
 			'brickset_category_cache': 		'yml',
@@ -34,13 +35,23 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 	#============================
 	def _get_set(self, set_number):
 		time.sleep(random.random())
+		self.api_calls += 1
 		response = brickse.lego.get_set(set_number=set_number, extended_data=False)
 		data = json.loads(response.read())
 		if data['status'] != "success":
+			self.save_cache()
+			if data.get('message') == 'API limit exceeded':
+				print('API limit exceeded')
+				time.sleep(random.random())
+				self.api_daily_limit_exceeded = True
+				return None
 			print("STATUS ERROR", data['status'])
 			print(list(data.keys()))
 			import pprint
-			pprint.pprint(data['sets'][0])
+			try:
+				pprint.pprint(data['sets'][0])
+			except KeyError:
+				pprint.pprint(data)
 			sys.exit(1)
 		if data['matches'] != 1:
 			print("MATCHES ERROR", data['matches'])
@@ -77,7 +88,11 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 			self.brickset_set_cache[setID] = set_data
 			return set_data
 		###################
+		if self.api_daily_limit_exceeded is True:
+			return None
 		set_data = self._get_set(setID)
+		if set_data is None:
+			return None
 		set_data['set_num'] = legoID
 		self.brickset_set_cache[setID] = set_data
 		return set_data
@@ -89,23 +104,33 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		setID = str(legoID) + "-1"
 		###################
 		msrp = self.brickset_msrp_cache.get(setID)
+		if msrp == 0:
+			# 0 means it was not found, 10% chance to check again
+			if random.random() > 0.1:
+				return None
 		if msrp is not None:
 			if verbose is True:
 				print('SET {0} -- MSRP ${1:.2f} -- from cache'.format(
 					legoID, int(msrp)/100.))
 			return msrp
 		###################
+		if self.api_daily_limit_exceeded is True:
+			return None
 		set_data = self._get_set(setID)
+		if set_data is None:
+			return None
 		legocom = set_data.get('LEGOCom')
 		region = legocom.get(region)
 		if region is None:
 			#print(', '.join(legocom.keys()))
+			self.brickset_msrp_cache[setID] = 0
 			return None
 		price = region.get('retailPrice')
 		if price is None:
 			#print(', '.join(legocom.keys()))
 			#print(type(region), len(region.keys()))
 			#print(', '.join(region.keys()))
+			self.brickset_msrp_cache[setID] = 0
 			return None
 		msrp = price
 		#save value as integer in cents
