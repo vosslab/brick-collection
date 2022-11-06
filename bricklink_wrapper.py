@@ -18,6 +18,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
 		  self.api_data['token_value'], self.api_data['token_secret'])
 
+		self.price_count = 0
 		self.data_caches = {
 			'bricklink_category_cache': 		'yml',
 			'bricklink_price_cache': 			'yml',
@@ -44,6 +45,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			 or len(response.get('data')) == 0):
 			error_msg = True
 		if error_msg is True:
+			self.save_cache()
 			print('URL', url)
 			print("STATUS", status)
 			print("HEADERS", headers)
@@ -167,6 +169,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 					print(item['type'], item['name'])
 					continue
 				if item['type'] != 'PART':
+					self.save_cache()
 					print(item)
 					print(item['type'])
 					sys.exit(1)
@@ -202,6 +205,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				))
 			return price_data
 		###################
+		#print('price_data=', price_data)
 		return None
 
 	#============================
@@ -288,6 +292,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				float(price_data.get('used_median_list_price'))/100.,
 			))
 		self.bricklink_price_cache[item_id] = price_data
+		self.price_count += 1
+		if self.price_count % 10 == 0:
+			self.save_cache(single_cache_name='bricklink_price_cache')
 		return price_data
 
 	#============================
