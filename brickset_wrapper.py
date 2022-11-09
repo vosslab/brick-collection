@@ -41,8 +41,11 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		if data['status'] != "success":
 			self.save_cache()
 			if data.get('message') == 'API limit exceeded':
-				print('API limit exceeded')
-				time.sleep(random.random())
+				print('BrickSet API limit exceeded')
+				print("{0} api calls were made".format(self.api_calls))
+				for i in range(9):
+					time.sleep(random.random())
+					print(".")
 				self.api_daily_limit_exceeded = True
 				return None
 			print("STATUS ERROR", data['status'])
