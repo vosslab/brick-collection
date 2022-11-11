@@ -24,6 +24,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'bricklink_price_cache': 			'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
 
+			'bricklink_subset_cache': 			'json',
 			'bricklink_minifig_cache': 			'json',
 			'bricklink_minifig_set_cache': 		'json',
 			'bricklink_part_cache': 			'json',
@@ -370,6 +371,36 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	def getSetIDsFromSet(self, legoID, verbose=True):
+		""" get list of set data dicts from BrickLink using an integer legoID """
+		self._check_lego_ID(legoID)
+		###################
+		set_id_tree = self.bricklink_subset_cache.get(legoID)
+		if set_id_tree is not None and isinstance(set_id_tree, list):
+			if verbose is True:
+				print('SET {0} -- {1} sub-sets -- from cache'.format(legoID, len(set_id_tree)))
+			return set_id_tree
+		###################
+		subsets_tree = self.getPartsFromSet(legoID, verbose=False)
+		set_id_tree = []
+		for part in subsets_tree:
+			for entry in part['entries']:
+				item = entry['item']
+				if item['type'] != 'SET':
+					continue
+				setID = item['no']
+				#qty = entry.get('quantity', 1)
+				qty = entry['quantity']
+				for qi in range(qty):
+					set_id_tree.append(setID)
+		set_id_tree.sort()
+		if verbose is True:
+			print('SET {0} -- {1} sub-sets -- from BrickLink website'.format(legoID, len(set_id_tree)))
+		self.bricklink_subset_cache[legoID] = set_id_tree
+		return set_id_tree
+
+	#============================
+	#============================
 	def getMinifigIDsFromSet(self, legoID, verbose=True):
 		""" get list of minifig data dicts from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
@@ -388,7 +419,11 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				if item['type'] != 'MINIFIG':
 					continue
 				minifigID = item['no']
-				minifig_id_tree.append(minifigID)
+				#qty = entry.get('quantity', 1)
+				qty = entry['quantity']
+				for qi in range(qty):
+					minifig_id_tree.append(minifigID)
+		minifig_id_tree.sort()
 		if verbose is True:
 			print('SET {0} -- {1} minifigs -- from BrickLink website'.format(legoID, len(minifig_id_tree)))
 		self.bricklink_minifig_set_cache[legoID] = minifig_id_tree
