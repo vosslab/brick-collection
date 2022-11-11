@@ -1,5 +1,6 @@
 # Ignore JPEG files that were downloaded
 *.jpg
+*.ods
 
 # Ignore YAML files used for config and cache
 *.yml
