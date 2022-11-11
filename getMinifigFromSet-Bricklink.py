@@ -3,23 +3,10 @@
 import os
 import sys
 import html
-import time
-import string
+
+import libbrick
 import bricklink_wrapper
 
-#============================
-#============================
-def makeTimestamp():
-	datestamp = time.strftime("%y%b%d").lower()
-	hourstamp = string.ascii_lowercase[(time.localtime()[3])%26]
-	if hourstamp == "x":
-		### SPIDER does not like x's
-		hourstamp = "z"
-	#mins = time.localtime()[3]*12 + time.localtime()[4]
-	#minstamp = string.lowercase[mins%26]
-	minstamp = "%02d"%(time.localtime()[4])
-	timestamp = datestamp+hourstamp+minstamp
-	return timestamp
 
 #============================
 #============================
@@ -27,42 +14,28 @@ if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
-	legoidFile = sys.argv[1]
-	if not os.path.isfile(legoidFile):
+	setIDFile = sys.argv[1]
+	if not os.path.isfile(setIDFile):
 		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
 
-	legoIDs = []
-	f = open(legoidFile, "r")
-	for line in f:
-		sline = line.strip()
-		try:
-			legoID = int(sline)
-		except ValueError:
-			continue
-		legoIDs.append(legoID)
-	f.close()
-	legoIds = list(set(legoIDs))
-	legoIDs.sort()
-	print("Found {0} Lego IDs to process".format(len(legoIDs)))
-	#random.shuffle(legoIDs)
+	setIDs = libbrick.read_setIDs_from_file(setIDFile)
 
-	timestamp = makeTimestamp()
+	timestamp = libbrick.make_timestamp()
 	csvfile = "minifig_data-bricklink-{0}.csv".format(timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	BLwrap = bricklink_wrapper.BrickLink()
 
-	for legoID in legoIDs:
+	for setID in setIDs:
 		sys.stderr.write(".")
-		#print(legoID)
-		set_data = BLwrap.getSetData(legoID)
-		minifig_id_tree = BLwrap.getMinifigIDsFromSet(legoID)
+		set_data = BLwrap.getSetData(setID)
+		minifig_id_tree = BLwrap.getMinifigIDsFromSet(setID)
 		for minifigID in minifig_id_tree:
 			minifig_data = BLwrap.getMinifigData(minifigID)
 			price_data = BLwrap.getMinifigsPriceData(minifigID)
 			total_data = {**minifig_data, **price_data}
-			total_data['set_num'] = legoID
+			total_data['set_id'] = setID
 			total_data['minifig_id'] = minifigID
 			line += 1
 			if line == 1:
