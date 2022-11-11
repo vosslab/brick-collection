@@ -194,7 +194,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	def _lookUpPriceDataCache(self, item_id, verbose=True):
 		""" common function for looking price data from cache """
 		###################
-		price_data = self.bricklink_price_cache.get(item_id)
+		price_data = self.bricklink_price_cache.get(str(item_id))
 		if self._check_if_data_valid(price_data) is True:
 			if verbose is True:
 				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from cache'.format(
@@ -292,7 +292,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				float(price_data.get( 'new_median_list_price'))/100.,
 				float(price_data.get('used_median_list_price'))/100.,
 			))
-		self.bricklink_price_cache[item_id] = price_data
+		self.bricklink_price_cache[str(item_id)] = price_data
 		self.price_count += 1
 		if self.price_count % 10 == 0:
 			self.save_cache(single_cache_name='bricklink_price_cache')
@@ -375,7 +375,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get list of set data dicts from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
 		###################
-		set_id_tree = self.bricklink_subset_cache.get(legoID)
+		set_id_tree = self.bricklink_subset_cache.get(str(legoID))
 		if set_id_tree is not None and isinstance(set_id_tree, list):
 			if verbose is True:
 				print('SET {0} -- {1} sub-sets -- from cache'.format(legoID, len(set_id_tree)))
@@ -396,7 +396,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		set_id_tree.sort()
 		if verbose is True:
 			print('SET {0} -- {1} sub-sets -- from BrickLink website'.format(legoID, len(set_id_tree)))
-		self.bricklink_subset_cache[legoID] = set_id_tree
+		self.bricklink_subset_cache[str(legoID)] = set_id_tree
 		return set_id_tree
 
 	#============================
@@ -405,7 +405,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get list of minifig data dicts from BrickLink using an integer legoID """
 		self._check_lego_ID(legoID)
 		###################
-		minifig_id_tree = self.bricklink_minifig_set_cache.get(legoID)
+		minifig_id_tree = self.bricklink_minifig_set_cache.get(str(legoID))
 		if minifig_id_tree is not None and isinstance(minifig_id_tree, list):
 			if verbose is True:
 				print('SET {0} -- {1} minifigs -- from cache'.format(legoID, len(minifig_id_tree)))
@@ -426,7 +426,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		minifig_id_tree.sort()
 		if verbose is True:
 			print('SET {0} -- {1} minifigs -- from BrickLink website'.format(legoID, len(minifig_id_tree)))
-		self.bricklink_minifig_set_cache[legoID] = minifig_id_tree
+		self.bricklink_minifig_set_cache[str(legoID)] = minifig_id_tree
 		return minifig_id_tree
 
 	#============================
@@ -435,7 +435,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get individual minifig data from BrickLink using an string minifigID """
 
 		###################
-		minifig_data = self.bricklink_minifig_cache.get(minifigID)
+		minifig_data = self.bricklink_minifig_cache.get(str(minifigID))
 		if self._check_if_data_valid(minifig_data) is True:
 			if verbose is True:
 				print('MINIFIG {0} -- {1} ({2}) -- from cache'.format(
@@ -448,7 +448,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if verbose is True:
 			print('MINIFIG {0} -- {1} ({2}) -- from BrickLink website'.format(
 				minifigID, minifig_data.get('name')[:60], minifig_data.get('year_released'),))
-		self.bricklink_minifig_cache[minifigID] = minifig_data
+		self.bricklink_minifig_cache[str(minifigID)] = minifig_data
 		return minifig_data
 
 	#============================

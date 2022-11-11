@@ -36,7 +36,7 @@ class BaseWrapperClass(object):
 	#============================
 	def start(self):
 		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
-		self.data_refresh_cutoff = 0.01 # 1% of the data is refreshed
+		self.data_refresh_cutoff = 0.0001 # 1% of the data is refreshed
 		self.api_calls = 0
 		self.api_log = []
 		self.load_cache()

@@ -110,11 +110,25 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		setID = str(legoID) + "-1"
 		###################
 		msrp = self.brickset_msrp_cache.get(setID)
-		if msrp == 0:
+		if msrp == 0 or msrp is None:
+			set_data = self.brickset_set_cache.get(setID)
+			if set_data is not None:
+				if 'polybag' in set_data['name']:
+					msrp = 499
+					print("... polybag")
+					time.sleep(random.random())
+					time.sleep(random.random())
+					self.brickset_msrp_cache[setID] = msrp
+					return msrp
+				else:
+					print(set_data['name'])
+		if msrp == 0 and random.random() < 0.01:
 			# 0 means it was not found, 10% chance to check again
-			if random.random() > 0.1:
-				return None
-		if msrp is not None:
+			print("... check for MSRP again")
+			time.sleep(random.random())
+			time.sleep(random.random())
+			pass
+		elif msrp is not None:
 			if verbose is True:
 				print('SET {0} -- MSRP ${1:.2f} -- from cache'.format(
 					legoID, int(msrp)/100.))

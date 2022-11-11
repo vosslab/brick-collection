@@ -12,6 +12,7 @@ import bricklink_wrapper
 
 from collections.abc import MutableMapping
 
+#============================
 def _flatten_dict_gen(d, parent_key, sep):
 	for k, v in d.items():
 		new_key = parent_key + sep + k if parent_key else k
@@ -20,9 +21,9 @@ def _flatten_dict_gen(d, parent_key, sep):
 		else:
 			yield new_key, v
 
+#============================
 def flatten_dict(d: MutableMapping, parent_key: str = '', sep: str = '.'):
 	return dict(_flatten_dict_gen(d, parent_key, sep))
-
 
 #============================
 #============================
@@ -37,6 +38,46 @@ def makeTimestamp():
 	minstamp = "%02d"%(time.localtime()[4])
 	timestamp = datestamp+hourstamp+minstamp
 	return timestamp
+
+#============================
+#============================
+def getAllData(itemID, rbw, bsw, blw):
+	#print(legoID)
+	if blw._check_lego_ID(itemID) is True:
+		setID = '{0}-1'.format(itemID)
+	elif '-' in itemID:
+		setID = itemID
+	else:
+		print("UNKNOWN ID: "+itemID)
+		return None
+	legoID = int(setID.split('-')[0])
+	data = rbw.getSetDataDirect(setID)
+	bsw_data = bsw.getSetDataDirect(setID)
+	if bsw_data is not None:
+		data |= bsw_data
+	data |= blw.getSetDataDirect(setID)
+	data |= blw.getSetDataDirect(setID)
+	data |= blw.getSetPriceData(legoID)
+	data['msrp'] = bsw.getSetMSRP(legoID)
+	#print(data)
+
+	data = flatten_dict(data)
+	data['$pP-retail'] = round(data['msrp']/data['num_parts'],1)
+	data['$pP-used'] = round(data['used_median_sale_price']/data['num_parts'],1)
+	data['$pP-new'] = round(data['new_median_sale_price']/data['num_parts'],1)
+	data['growth-used'] = round(data['used_median_sale_price']/data['msrp'],1)
+	data['growth-new'] = round(data['new_median_sale_price']/data['msrp'],1)
+
+	if data['$pP-used'] > 10 and data['growth-used'] > 1.5:
+		data['flag'] = "KEEP"
+	elif data['year'] >= 2019:
+		data['flag'] = "wait"
+	elif 0 < data['$pP-used'] < 10 and data['growth-used'] < 1.0:
+		data['flag'] = "PARTOUT"
+	else:
+		data['flag'] = "??"
+
+	return data
 
 #============================
 #============================
@@ -77,47 +118,51 @@ if __name__ == '__main__':
 
 	#============================
 	#============================
-	f = open(csvfile, "w")
+
+	line = 0
+	data_tree = []
+	allkeys = []
 	line = 0
 	for itemID in legoIDs:
 		line += 1
 		sys.stderr.write(".")
-		#print(legoID)
-		if blw._check_lego_ID(itemID) is True:
-			setID = '{0}-1'.format(itemID)
-		elif '-' in itemID:
-			setID = itemID
-		else:
-			print("UNKNOWN ID: "+itemID)
+		data = getAllData(itemID, rbw, bsw, blw)
+		if data is None:
 			continue
-		legoID = int(setID.split('-')[0])
-		data = rbw.getSetDataDirect(setID)
-		bsw_data = bsw.getSetDataDirect(setID)
-		if bsw_data is not None:
-			data |= bsw_data
-		data |= blw.getSetDataDirect(setID)
-		data |= blw.getSetDataDirect(setID)
-		data |= blw.getSetPriceData(legoID)
-		data['msrp'] = bsw.getSetMSRP(legoID)
-		#print(data)
-		if line % 25 == 0:
+		data_tree.append(data)
+		allkeys += data.keys()
+		allkeys = list(set(allkeys))
+		if line % 100 == 0:
 			rbw.save_cache()
 			bsw.save_cache()
 			blw.save_cache()
-		data = flatten_dict(data)
-		if line == 1:
-			allkeys = list(data.keys())
-			allkeys.sort()
-			print(', '.join(allkeys))
-			for key in allkeys:
-				f.write("%s\t"%(str(key)))
-			f.write("\n")
+
+	#random.shuffle(data_tree)
+	rbw.close()
+	bsw.close()
+	blw.close()
+
+	#============================
+	#============================
+
+	allkeys = sorted(allkeys, key=str.lower)
+	f = open(csvfile, "w")
+	for key in allkeys:
+		if key.startswith('extended'):
+			continue
+		f.write("{0}\t".format(key.lower()))
+	f.write("\n")
+	for data in data_tree:
 		set_line = ''
 		for key in allkeys:
+			if key.startswith('extended'):
+				continue
 			value = data.get(key)
 			if value is not None:
 				value = str(value).strip()
 				value = value.replace('\t', ' ')
+				value = value.replace('\n', ' ')
+				value = value.replace(',', ' ')
 				value = value.replace('\n', ' ')
 				while '  ' in value:
 					value = value.replace('  ', ' ')
@@ -131,10 +176,11 @@ if __name__ == '__main__':
 			else:
 				set_line += "\t"
 		f.write(set_line+"\n")
+
+	#============================
+	#============================
+
 	f.close()
-	rbw.close()
-	bsw.close()
-	blw.close()
 	sys.stderr.write("\n")
 	print(("Wrote %d lines to %s"%(line, csvfile)))
 
