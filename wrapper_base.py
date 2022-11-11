@@ -30,6 +30,7 @@ class BaseWrapperClass(object):
 			'wrapper_test_json_cache': 'json',
 			'wrapper_test_yaml_cache': 'yml',
 		}
+		self.create_time = time.time()
 		self.start()
 
 	#============================
@@ -111,12 +112,24 @@ class BaseWrapperClass(object):
 			legoID = int(legoID)
 		if legoID < 3000:
 			print("Error: Lego set ID is too small: {0}".format(legoID))
-			sys.exit(1)
+			raise KeyError
 		elif legoID > 99999:
 			print("Error: Lego set ID is too big: {0}".format(legoID))
-			sys.exit(1)
+			raise KeyError
 		return True
 
+	#============================
+	#============================
+	def _check_set_ID(self, setID):
+		""" check to make sure number is valid """
+		if isinstance(setID, int):
+			print("Error: invalid setID, integer", setID)
+			raise TypeError
+		if not '-' in setID:
+			print("Error: invalid setID, no hyphen", setID)
+			raise KeyError
+		legoID = int(setID.split('-')[0])
+		return self._check_lego_ID(legoID)
 
 	#============================
 	#============================
