@@ -23,6 +23,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'bricklink_category_cache': 		'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
 			'bricklink_minifig_set_cache': 		'yml',
+			'bricklink_minifig_category_cache': 'yml',
+
 
 			'bricklink_price_cache': 			'json',
 			'bricklink_subset_cache': 			'json',
@@ -85,6 +87,32 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	def getCategoryNameFromMinifigID(self, minifigID):
+		category_name = self.bricklink_minifig_category_cache.get(minifigID)
+		if category_name is not None:
+			return category_name
+		supersets = self.getSupersetFromMinifigID(minifigID)
+		setID = None
+		stop = False
+		for entry in supersets:
+			#print(len(entry))
+			#print(entry.keys())
+			item = entry['item']
+			#print(len(item))
+			#print(item.keys())
+			if item['type'] == 'SET' and len(item['no']) <= 7:
+				setID = item['no']
+				break
+		if setID is None:
+			return None
+		set_data = self.getSetData(setID)
+		category_name = self.getCategoryName(set_data['category_id'])
+		print('MINIFIG {0} -- {1} -- from BrickLink website'.format(minifigID, category_name))
+		self.bricklink_minifig_category_cache[minifigID] = category_name
+		return category_name
+
+	#============================
+	#============================
 	def getSetData(self, setID, verbose=True):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
@@ -124,6 +152,23 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		set_data['category_name'] = self.getCategoryName(set_data['category_id'])
 		self.bricklink_set_cache[setID] = set_data
 		return set_data
+
+	#============================
+	#============================
+	def getSupersetFromMinifigID(self, minifigID, verbose=True):
+		""" get all sets that include minifig"""
+		###################
+		result = self._bricklink_get('items/minifig/{0}/supersets'.format(minifigID))
+		#import pprint
+		#pprint.pprint(result)
+		supersets_tree = result[0]['entries']
+		###################
+		if verbose is True:
+			print('MINIFIG {0} -- {1} supersets -- from BrickLink website'.format(minifigID, len(supersets_tree)))
+		if self.debug is True:
+			pass
+			#self.bricklink_subsets_cache[setID] = subsets_tree
+		return supersets_tree
 
 	#============================
 	#============================
@@ -434,7 +479,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if self._check_if_data_valid(minifig_data) is True:
 			if verbose is True:
 				print('MINIFIG {0} -- {1} ({2}) -- from cache'.format(
-					minifig_data.get('no'), minifig_data.get('name'), minifig_data.get('year_released'),))
+					minifig_data.get('no'), minifig_data.get('name')[:60], minifig_data.get('year_released'),))
 			return minifig_data
 		###################
 		minifig_data = self._bricklink_get('items/minifig/{0}'.format(minifigID))
