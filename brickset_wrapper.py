@@ -71,9 +71,8 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getSetData(self, legoID, verbose=True):
-		self._check_lego_ID(legoID)
-		setID = str(legoID) + "-1"
+	def getSetData(self, setID, verbose=True):
+		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID)
 		return set_data
 
@@ -81,8 +80,7 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 	#============================
 	def getSetDataDirect(self, setID, verbose=True):
 		""" get the set data from BrickSet using a setID with hyphen, e.g. 71515-2 """
-		legoID = int(setID.split('-')[0])
-		self._check_lego_ID(legoID)
+		self._check_set_ID(setID)
 		###################
 		set_data = self.brickset_set_cache.get(setID)
 		if self._check_if_data_valid(set_data) is True:
@@ -99,15 +97,13 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		set_data = self._get_set(setID)
 		if set_data is None:
 			return None
-		set_data['set_num'] = legoID
 		self.brickset_set_cache[setID] = set_data
 		return set_data
 
 	#============================
 	#============================
-	def getSetMSRP(self, legoID, region='US', verbose=True):
-		self._check_lego_ID(legoID)
-		setID = str(legoID) + "-1"
+	def getSetMSRP(self, setID, region='US', verbose=True):
+		self._check_set_ID(setID)
 		###################
 		msrp = self.brickset_msrp_cache.get(setID)
 		if msrp == 0 or msrp is None:
@@ -131,7 +127,7 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		elif msrp is not None:
 			if verbose is True:
 				print('SET {0} -- MSRP ${1:.2f} -- from cache'.format(
-					legoID, int(msrp)/100.))
+					setID, int(msrp)/100.))
 			return msrp
 		###################
 		if self.api_daily_limit_exceeded is True:
@@ -160,17 +156,17 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getPartsFromSet(self, legoID, verbose=True):
-		self._check_lego_ID(legoID)
+	def getPartsFromSet(self, setID, verbose=True):
+		self._check_set_ID(setID)
 		print("NOT IMPLEMENTED YET")
 		sys.exit(1)
 		#return subsets_tree
 
 	#============================
 	#============================
-	def getSetPriceDetails(self, legoID, new_or_used='U', country_code='US',
+	def getSetPriceDetails(self, setID, new_or_used='U', country_code='US',
 			currency_code='USD', verbose=True):
-		self._check_lego_ID(legoID)
+		self._check_set_ID(setID)
 		print("NOT IMPLEMENTED YET")
 		sys.exit(1)
 		#return price_data
@@ -192,8 +188,8 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getMinifigsFromSet(self, legoID, verbose=True):
-		self._check_lego_ID(legoID)
+	def getMinifigsFromSet(self, setID, verbose=True):
+		self._check_set_ID(setID)
 		print("NOT IMPLEMENTED YET")
 		sys.exit(1)
 		#return minifig_set_tree
