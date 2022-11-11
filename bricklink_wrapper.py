@@ -21,12 +21,12 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		self.price_count = 0
 		self.data_caches = {
 			'bricklink_category_cache': 		'yml',
-			'bricklink_price_cache': 			'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
+			'bricklink_minifig_set_cache': 		'yml',
 
+			'bricklink_price_cache': 			'json',
 			'bricklink_subset_cache': 			'json',
 			'bricklink_minifig_cache': 			'json',
-			'bricklink_minifig_set_cache': 		'json',
 			'bricklink_part_cache': 			'json',
 			'bricklink_set_cache': 				'json',
 		}
