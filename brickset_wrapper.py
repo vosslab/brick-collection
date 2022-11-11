@@ -63,6 +63,9 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 			pprint.pprint(data['sets'][0])
 			sys.exit(1)
 		set_data = data['sets'][0]
+		if self.debug is True:
+			print('SET {0} -- {1} ({2}) -- from BrickSet website'.format(
+				set_data.get('number'), set_data.get('name'), set_data.get('year'),))
 		set_data['time'] = int(time.time())
 		return set_data
 
