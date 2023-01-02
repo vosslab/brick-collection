@@ -31,6 +31,7 @@ if __name__ == '__main__':
 		sys.stderr.write(".")
 		set_data = BLwrap.getSetData(setID)
 		minifig_id_tree = BLwrap.getMinifigIDsFromSet(setID)
+		print(minifig_id_tree)
 		for minifigID in minifig_id_tree:
 			minifig_data = BLwrap.getMinifigData(minifigID)
 			price_data = BLwrap.getMinifigsPriceData(minifigID)
