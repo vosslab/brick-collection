@@ -60,7 +60,7 @@ class BaseWrapperClass(object):
 					else:
 						print("UNKNOWN CACHE FORMAT: ", cache_data)
 						sys.exit(1)
-					print('.. loaded {0} entires from {1} in {2:d} usec'.format(
+					print('.. loaded {0} entires from {1} in {2:,d} usec'.format(
 						len(cache_data), file_name, int((time.time()-t0)*1e6)))
 				except IOError:
 					cache_data = {}
@@ -100,7 +100,7 @@ class BaseWrapperClass(object):
 				else:
 					print("UNKNOWN CACHE FORMAT: ", cache_data)
 					sys.exit(1)
-				print('.. wrote {0} entires to {1} in {2:d} usec'.format(
+				print('.. wrote {0} entires to {1} in {2:,d} usec'.format(
 					len(cache_data), file_name, int((time.time()-t0)*1e6)))
 		print('==== END CACHE ====')
 
