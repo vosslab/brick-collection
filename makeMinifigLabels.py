@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import sys
 import time
 import random
@@ -26,12 +27,12 @@ latex_header = """
 	% Avery 18260 described as 1in by 2 5/8in
 	\\varwidth{2.5in}
 	\\raggedright % but measures 2.75in wide
-	\\begin{minipage}[c]{0.7in}
-		\\includegraphics[width=0.65in,
+	\\begin{minipage}[c]{0.5in}
+		\\includegraphics[width=0.45in,
 			height=0.65in,
 			keepaspectratio,]{#1}
 	\\end{minipage}
-	\\begin{minipage}[c]{1.7in}
+	\\begin{minipage}[c]{1.9in}
 	\\raggedright
 }
 {
@@ -89,6 +90,10 @@ def makeLabel(minifig_dict, price_dict):
 	"""
 	print(minifig_dict)
 	set_num = minifig_dict.get('set_num')
+	if set_num is None:
+		set_id = minifig_dict.get('set_id')
+		if set_id is not None:
+			set_num = set_id.split('-')[0]
 	minifig_id = minifig_dict.get('minifig_id')
 	print('-----\nProcessing Minifig {0} from Set {1}'.format(minifig_id, set_num))
 	if not os.path.isdir('images'):
@@ -100,30 +105,58 @@ def makeLabel(minifig_dict, price_dict):
 
 	minifig_name = minifig_dict.get('name')
 	minifig_name = minifig_name.replace('#', '')
-	if len(minifig_name) > 100:
+	minifig_name = re.sub('\([^\)]+\)', '', minifig_name)
+	if len(minifig_name) > 64:
 		new_name = ''
 		bits = minifig_name.split(' ')
 		i = 0
-		while len(new_name) < 90:
+		while len(new_name) < 58:
 			new_name += bits[i] + ' '
 			i += 1
 		minifig_name = new_name
 	time_str = time.strftime("%b %Y", time.gmtime())
+	if len(minifig_name) < 18:
+		name_fontsize = '\\normalsize'
+	elif len(minifig_name) < 26:
+		name_fontsize = '\\small'
+	elif len(minifig_name) < 34:
+		name_fontsize = '\\footnotesize'
+	elif len(minifig_name) < 50:
+		name_fontsize = '\\scriptsize'
+	else:
+		name_fontsize = '\\tiny'
 
+	## IMAGE
 	latex_str  = ('\\begin{legocell}{'
 		+filename
 		+'}\n')
-	latex_str += ('\\textbf{\\color{DarkBlue}\\Large '
-		+str(minifig_id)
-		+'} {\\sffamily\\scriptsize '+time_str+'}\\\\\n')
-	latex_str += ('from set \\textbf{\\large'
-		+str(set_num)
-		+ '} ('
-		+minifig_dict.get('year_released')
-		+')\\\\\n')
-	latex_str += ('{\\sffamily\\scriptsize '
+
+	## MINIFIG ID, label pub date
+	latex_str += '\\textbf{\\color{DarkBlue}'
+	if len(minifig_id) < 10:
+		latex_str += '\\LARGE '+str(minifig_id)
+	else:
+		latex_str += '\\large '+str(minifig_id)
+	latex_str += '} {\\sffamily\\tiny '+time_str+'}\\par \n'
+
+	## FROM SET [] and YEAR ()
+	latex_str += '\\vspace{-1pt} '
+	if set_num is not None and len(set_num) > 3:
+		latex_str += ('{\\tiny \> from set \\textbf{ '
+			+str(set_num)
+			+ ' } \\footnotesize ('
+			+minifig_dict.get('year_released')
+			+')}\\par \n')
+	else:
+		latex_str += ('{\\footnotesize \> release year: '
+			+minifig_dict.get('year_released')
+			+'}\\par \n')
+
+	### MINIFIG NAME
+	#latex_str += '\\vspace{-2pt} '
+	latex_str += ('{\\sffamily'+name_fontsize+' '
 		+minifig_name
-		+'}\\\\\n')
+		+'}\\par \n')
 
 	### SALES INFO
 	new_median_sale_price = float(price_dict['new_median_sale_price'])
@@ -131,8 +164,8 @@ def makeLabel(minifig_dict, price_dict):
 	if new_median_sale_price > 0 or used_median_sale_price > 0:
 		new_sale_qty = int(price_dict['new_sale_qty'])
 		used_sale_qty = int(price_dict['used_sale_qty'])
-
-		latex_str += '{\\sffamily\\scriptsize '
+		latex_str += '\\vspace{-3pt} '
+		latex_str += '{\\sffamily\\tiny '
 		latex_str += 'sale: '
 		if new_median_sale_price > 0 and used_median_sale_price > 0:
 			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
@@ -149,7 +182,8 @@ def makeLabel(minifig_dict, price_dict):
 	if new_median_list_price > 0 or used_median_list_price > 0:
 		new_list_qty = int(price_dict['new_list_qty'])
 		used_list_qty = int(price_dict['used_list_qty'])
-		latex_str += '{\\sffamily\\scriptsize '
+		latex_str += '\\vspace{-3pt} '
+		latex_str += '{\\sffamily\\tiny '
 		latex_str += 'list: '
 		if new_median_list_price > 0 and used_median_list_price > 0:
 			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
@@ -213,15 +247,15 @@ if __name__ == '__main__':
 			pprint.pprint(minifig_dict)
 			print('')
 			print(minifig_dict.keys())
-			sys.exit(1)
-		if float(minifig_dict['weight']) > 10:
+			raise KeyError
+		if float(minifig_dict['weight']) > 1000:
 			print("TOO BIG: weight {3} skipping {0} from set {1}: {2}".format(
-				minifig_dict['no'], minifig_dict['set_num'], minifig_dict['name'][:60], minifig_dict['weight']))
+				minifig_dict['no'], minifig_dict.get('set_num'), minifig_dict['name'][:60], minifig_dict['weight']))
 			continue
 		minifig_info_tree.append(minifig_dict)
 	f.close()
-	minifig_info_tree = sorted(minifig_info_tree, key = lambda item: item['no'])
-	minifig_info_tree = sorted(minifig_info_tree, key = lambda item: int(item['set_num']))
+	#minifig_info_tree = sorted(minifig_info_tree, key = lambda item: item['no'])
+	#minifig_info_tree = sorted(minifig_info_tree, key = lambda item: int(item.get('set_num')))
 
 	total_minifigs = len(minifig_info_tree)
 	print("Found {0} Minifigs to process".format(total_minifigs))
