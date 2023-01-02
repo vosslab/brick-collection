@@ -24,7 +24,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'bricklink_set_brick_weight_cache': 'yml',
 			'bricklink_minifig_set_cache': 		'yml',
 			'bricklink_minifig_category_cache': 'yml',
-
+			'bricklink_minifig_superset_cache': 'yml',
 
 			'bricklink_price_cache': 			'json',
 			'bricklink_subset_cache': 			'json',
@@ -53,10 +53,12 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			print("STATUS", status)
 			print("HEADERS", headers)
 			print("RESPONSE", response)
-			sys.exit(1)
+			raise LookupError
 		data = response['data']
 		if isinstance(data, dict):
 			data['time'] = int(time.time())
+		if self.api_calls % 100 == 0:
+			self.save_cache()
 		return data
 
 	#============================
@@ -91,20 +93,10 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		category_name = self.bricklink_minifig_category_cache.get(minifigID)
 		if category_name is not None:
 			return category_name
-		supersets = self.getSupersetFromMinifigID(minifigID)
-		setID = None
-		stop = False
-		for entry in supersets:
-			#print(len(entry))
-			#print(entry.keys())
-			item = entry['item']
-			#print(len(item))
-			#print(item.keys())
-			if item['type'] == 'SET' and len(item['no']) <= 7:
-				setID = item['no']
-				break
-		if setID is None:
+		superset_ids = self.getSupersetFromMinifigID(minifigID)
+		if superset_ids is None or len(superset_ids) == 0:
 			return None
+		setID = superset_ids[0]
 		set_data = self.getSetData(setID)
 		category_name = self.getCategoryName(set_data['category_id'])
 		print('MINIFIG {0} -- {1} -- from BrickLink website'.format(minifigID, category_name))
@@ -157,18 +149,34 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	def getSupersetFromMinifigID(self, minifigID, verbose=True):
 		""" get all sets that include minifig"""
+		set_id_list = self.bricklink_minifig_superset_cache.get(minifigID)
+		###################
+		if set_id_list is not None and len(set_id_list) > 0:
+			if verbose is True:
+				print('SUPERSET MINFIG {0} -- found {1} sets -- from cache'.format(
+					minifigID, len(set_id_list), ))
+			# update connected data
+			return set_id_list
 		###################
 		result = self._bricklink_get('items/minifig/{0}/supersets'.format(minifigID))
 		#import pprint
 		#pprint.pprint(result)
+		set_id_list = []
 		supersets_tree = result[0]['entries']
+		for entry in supersets_tree:
+			#print(len(entry))
+			#print(entry.keys())
+			item = entry['item']
+			#print(len(item))
+			#print(item.keys())
+			if item['type'] == 'SET' and len(item['no']) <= 7:
+				setID = item['no']
+				set_id_list.append(setID)
 		###################
 		if verbose is True:
-			print('MINIFIG {0} -- {1} supersets -- from BrickLink website'.format(minifigID, len(supersets_tree)))
-		if self.debug is True:
-			pass
-			#self.bricklink_subsets_cache[setID] = subsets_tree
-		return supersets_tree
+			print('MINIFIG {0} -- {1} supersets -- from BrickLink website'.format(minifigID, len(set_id_list)))
+		self.bricklink_minifig_superset_cache[minifigID] = set_id_list
+		return set_id_list
 
 	#============================
 	#============================
@@ -231,10 +239,13 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def _lookUpPriceDataCache(self, item_id, verbose=True):
+	def _lookUpPriceDataCache(self, item_id, color_id=None, verbose=True):
 		""" common function for looking price data from cache """
 		###################
-		price_data = self.bricklink_price_cache.get(str(item_id))
+		key = str(item_id)
+		if color_id is not None:
+			key = '{0}_{1}'.format(item_id, color_id)
+		price_data = self.bricklink_price_cache.get(key)
 		if self._check_if_data_valid(price_data) is True:
 			if verbose is True:
 				print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from cache'.format(
@@ -252,7 +263,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	#============================
 	def _compilePriceData(self, item_id, new_price_sale_details, used_price_sale_details,
-			new_price_list_details, used_price_list_details, verbose=True):
+			new_price_list_details, used_price_list_details, color_id=None, verbose=True):
 		###################
 		new_avg_sale_price 	= int(float(new_price_sale_details['avg_price'])*100)
 		new_sale_qty 		= int(new_price_sale_details['total_quantity'])
@@ -332,11 +343,31 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				float(price_data.get( 'new_median_list_price'))/100.,
 				float(price_data.get('used_median_list_price'))/100.,
 			))
-		self.bricklink_price_cache[str(item_id)] = price_data
+			if color_id is not None:
+				print('color_id={0}'.format(color_id))
+		key = str(item_id)
+		if color_id is not None:
+			key = '{0}_{1}'.format(item_id, color_id)
+		self.bricklink_price_cache[key] = price_data
 		self.price_count += 1
 		if self.price_count % 10 == 0:
 			self.save_cache(single_cache_name='bricklink_price_cache')
 		return price_data
+
+	#============================
+	#============================
+	def getPriceDetails(self, item_id, type, guide_type='sold', new_or_used='U',
+			country_code='US', currency_code='USD', color_id=None):
+		""" get price details from BrickLink using the string """
+		url = 'items/{0}/{1}/price'.format(type, item_id)
+		url += '?guide_type={0}'.format(guide_type)
+		url += '&new_or_used={0}'.format(new_or_used)
+		url += '&country_code={0}'.format(country_code)
+		url += '&currency_code={0}'.format(currency_code)
+		if color_id is not None:
+			url += '&color_id={0}'.format(color_id)
+		price_details = self._bricklink_get(url)
+		return price_details
 
 	#============================
 	#============================
@@ -346,9 +377,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		#https://www.bricklink.com/v3/api.page?page=get-price-guide
 		self._check_set_ID(setID)
 		###################
-		url = 'items/set/{0}/price?guide_type={1}&new_or_used={2}&country_code={3}&currency_code={4}'.format(
-			setID, guide_type, new_or_used, country_code, currency_code)
-		price_details = self._bricklink_get(url)
+		price_details = self.getPriceDetails(setID, 'set', guide_type, new_or_used,
+				country_code, currency_code)
 		qty = price_details['total_quantity']
 		###################
 		if verbose is True and qty > 1:
@@ -363,7 +393,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" compile price data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		###################
-		price_data = self._lookUpPriceDataCache(setID, verbose)
+		price_data = self._lookUpPriceDataCache(setID, verbose=verbose)
 		if price_data is not None:
 			return price_data
 		###################
@@ -378,13 +408,48 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	def getPartPriceDetails(self, partID, color_id=None, guide_type='sold', new_or_used='U',
+			country_code='US', currency_code='USD', verbose=True):
+		""" get price details from BrickLink using the string partID """
+		#https://www.bricklink.com/v3/api.page?page=get-price-guide
+		###################
+		price_details = self.getPriceDetails(partID, 'part', guide_type, new_or_used,
+				country_code, currency_code, color_id)
+		qty = price_details['total_quantity']
+		###################
+		if verbose is True and qty > 1:
+			avg_price = float(price_details['avg_price'])
+			print('PART {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
+				partID, avg_price, qty))
+		return price_details
+
+	#============================
+	#============================
+	def getPartPriceData(self, partID, colorID=None, verbose=False):
+		""" compile price data from BrickLink using the string partID """
+		###################
+		price_data = self._lookUpPriceDataCache(partID, color_id=colorID, verbose=verbose)
+		if price_data is not None:
+			return price_data
+		###################
+		used_price_sale_details = self.getPartPriceDetails(partID, colorID, guide_type='sold', new_or_used='U', verbose=verbose)
+		new_price_sale_details 	= self.getPartPriceDetails(partID, colorID, guide_type='sold', new_or_used='N', verbose=verbose)
+		used_price_list_details = self.getPartPriceDetails(partID, colorID, guide_type='stock', new_or_used='U', verbose=verbose)
+		new_price_list_details 	= self.getPartPriceDetails(partID, colorID, guide_type='stock', new_or_used='N', verbose=verbose)
+		price_data = self._compilePriceData(partID,
+			new_price_sale_details, used_price_sale_details,
+			new_price_list_details, used_price_list_details,
+			color_id=colorID,)
+		return price_data
+
+	#============================
+	#============================
 	def getMinifigPriceDetails(self, minifigID, guide_type='sold', new_or_used='U',
 			country_code='US', currency_code='USD', verbose=True):
 		""" get price details from BrickLink using an string minifigID """
 		###################
-		url = 'items/minifig/{0}/price?guide_type={1}&new_or_used={2}&country_code={3}&currency_code={4}'.format(
-			minifigID, guide_type, new_or_used, country_code, currency_code)
-		price_details = self._bricklink_get(url)
+		price_details = self.getPriceDetails(minifigID, 'minifig', guide_type, new_or_used,
+				country_code, currency_code)
 		###################
 		avg_price = float(price_details['avg_price'])
 		qty = price_details['total_quantity']
@@ -397,7 +462,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	def getMinifigsPriceData(self, minifigID, verbose=False):
 		""" compile price data from BrickLink using an string minifigID """
-		price_data = self._lookUpPriceDataCache(minifigID, verbose)
+		price_data = self._lookUpPriceDataCache(minifigID, verbose=verbose)
 		if price_data is not None:
 			return price_data
 		used_price_sale_details = self.getMinifigPriceDetails(minifigID, guide_type='sold', new_or_used='U', verbose=verbose)
@@ -406,7 +471,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		new_price_list_details 	= self.getMinifigPriceDetails(minifigID, guide_type='stock', new_or_used='N', verbose=verbose)
 		price_data = self._compilePriceData(minifigID,
 			new_price_sale_details, used_price_sale_details,
-			new_price_list_details, used_price_list_details)
+			new_price_list_details, used_price_list_details,
+			)
 		return price_data
 
 	#============================
