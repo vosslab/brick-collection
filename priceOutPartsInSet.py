@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import argparse
 
 import libbrick
@@ -46,18 +47,29 @@ if __name__ == '__main__':
 		if len(entries) > 1:
 			print(entries)
 			print('too many entries')
-			sys.exit(1)
+			time.sleep(1)
 		part_data_plus = entries[0]
 		part_data = part_data_plus['item']
-		print(part_data_plus)
-		partID = part_data['no']
-		colorID = part_data_plus['color_id']
-		price_data = BLW.getPartPriceData(partID, colorID)
-		print(price_data)
+		if part_data['type'] == 'PART':
+			print(part_data_plus)
+			partID = part_data['no']
+			colorID = part_data_plus['color_id']
+			price_data = BLW.getPartPriceData(partID, colorID)
+			extra_part_data = BLW.getPartData(partID)
+			print(price_data)
+		elif part_data['type'] == 'MINIFIG':
+			print(part_data_plus)
+			minifigID = part_data['no']
+			price_data = BLW.getMinifigPriceData(minifigID)
+			extra_part_data = {}
+			print(price_data)
 		data = {}
+		###
 		data.update(part_data_plus)
 		data.update(part_data)
 		data.update(price_data)
+		data.update(extra_part_data)
+		data['description'] = ''
 		#sys.exit(1)
 		if line == 1:
 			allkeys = list(data.keys())
@@ -76,8 +88,10 @@ if __name__ == '__main__':
 			elif isinstance(value, float):
 				f.write("{0:.3f}\t".format(value))
 			elif isinstance(value, str):
-				if len(value) > 100:
-					f.write("{0}\t".format(value[:100]))
+				value = value.replace(",", " ")
+				value = value.replace("\t", " ")
+				if len(value) > 70:
+					f.write("{0}\t".format(value[:70]))
 				else:
 					f.write("{0}\t".format(value))
 			else:

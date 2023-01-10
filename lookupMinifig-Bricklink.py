@@ -43,7 +43,7 @@ if __name__ == '__main__':
 			category_name = None
 		minifig_data['category_name'] = category_name
 		minifig_data['set_id'] = setID
-		price_data = BLwrap.getMinifigsPriceData(minifigID)
+		price_data = BLwrap.getMinifigPriceData(minifigID)
 		total_data = {**minifig_data, **price_data}
 		total_data['minifig_id'] = minifigID
 		if line == 1:

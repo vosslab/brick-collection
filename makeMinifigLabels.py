@@ -270,7 +270,7 @@ if __name__ == '__main__':
 	BLwrap = bricklink_wrapper.BrickLink()
 	for minifig_dict in minifig_info_tree:
 		minifigID = minifig_dict['minifig_id']
-		price_dict = BLwrap.getMinifigsPriceData(minifigID)
+		price_dict = BLwrap.getMinifigPriceData(minifigID)
 		count += 1
 		label = makeLabel(minifig_dict, price_dict)
 		f.write(label)

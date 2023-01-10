@@ -460,7 +460,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getMinifigsPriceData(self, minifigID, verbose=False):
+	def getMinifigPriceData(self, minifigID, verbose=False):
 		""" compile price data from BrickLink using an string minifigID """
 		price_data = self._lookUpPriceDataCache(minifigID, verbose=verbose)
 		if price_data is not None:

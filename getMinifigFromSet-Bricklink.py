@@ -34,7 +34,7 @@ if __name__ == '__main__':
 		print(minifig_id_tree)
 		for minifigID in minifig_id_tree:
 			minifig_data = BLwrap.getMinifigData(minifigID)
-			price_data = BLwrap.getMinifigsPriceData(minifigID)
+			price_data = BLwrap.getMinifigPriceData(minifigID)
 			total_data = {**minifig_data, **price_data}
 			total_data['set_id'] = setID
 			total_data['minifig_id'] = minifigID
