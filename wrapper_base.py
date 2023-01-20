@@ -128,7 +128,11 @@ class BaseWrapperClass(object):
 		if not '-' in setID:
 			print("Error: invalid setID, no hyphen", setID)
 			raise KeyError
-		legoID = int(setID.split('-')[0])
+		legoID = setID.split('-')[0]
+		try:
+			legoID = int(legoID)
+		except ValueError:
+			return False
 		return self._check_lego_ID(legoID)
 
 	#============================

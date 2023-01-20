@@ -12,9 +12,10 @@ import bricklink_wrapper
 #============================
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Find Price for All Parts in a Set')
-	parser.add_argument('-l', '--legoid', dest='legoid', metavar='#', type=int,
+	group = parser.add_mutually_exclusive_group(required=True)
+	group.add_argument('-l', '--legoid', dest='legoid', metavar='#', type=int,
 		help='an integer for the Lego ID, e.g. 11011')
-	parser.add_argument('-s', '--setid', dest='setid', metavar='#-1', type=int,
+	group.add_argument('-s', '--setid', dest='setid', metavar='#-1', type=str,
 		help='a string for the Set ID, e.g. 11011-1')
 
 	args = parser.parse_args()
@@ -26,6 +27,7 @@ if __name__ == '__main__':
 	else:
 		parser.print_help()
 		sys.exit(1)
+	legoid = int(setID.split('-')[0])
 
 	BLW = bricklink_wrapper.BrickLink()
 	sys.stderr.write(".")
@@ -35,7 +37,7 @@ if __name__ == '__main__':
 	print('\nFound {0} unique parts in set {1} {2}'.format(len(parts_tree), setID, set_data['name']))
 
 	timestamp = libbrick.make_timestamp()
-	csvfile = "part_data-bricklink-{0}.csv".format(timestamp)
+	csvfile = "part_data_for_{0}-bricklink-{1}.csv".format(legoid, timestamp)
 	f = open(csvfile, "w")
 	line = 0
 	#print(data)
@@ -63,13 +65,18 @@ if __name__ == '__main__':
 			price_data = BLW.getMinifigPriceData(minifigID)
 			extra_part_data = {}
 			print(price_data)
-		data = {}
+		data = {
+			'part id': partID,
+			'color id': colorID,
+		}
 		###
 		data.update(part_data_plus)
 		data.update(part_data)
 		data.update(price_data)
 		data.update(extra_part_data)
-		data['description'] = ''
+		data.pop('description', None)
+		data.pop('alternate_no', None)
+		data.pop('item', None)
 		#sys.exit(1)
 		if line == 1:
 			allkeys = list(data.keys())

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import math
 import time
 import yaml
 import random
@@ -25,6 +26,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'bricklink_minifig_set_cache': 		'yml',
 			'bricklink_minifig_category_cache': 'yml',
 			'bricklink_minifig_superset_cache': 'yml',
+			'bricklink_element_id_map_cache':	'yml',
 
 			'bricklink_price_cache': 			'json',
 			'bricklink_subset_cache': 			'json',
@@ -117,7 +119,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID, verbose)
-		price_dict = self.getSetPriceData(setID)
+		#price_dict = self.getSetPriceData(setID)
 		return set_data
 
 	#============================
@@ -263,7 +265,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	#============================
 	def _compilePriceData(self, item_id, new_price_sale_details, used_price_sale_details,
-			new_price_list_details, used_price_list_details, color_id=None, verbose=True):
+			new_price_list_details, used_price_list_details, min_qty=1, color_id=None, verbose=True):
 		###################
 		new_avg_sale_price 	= int(float(new_price_sale_details['avg_price'])*100)
 		new_sale_qty 		= int(new_price_sale_details['total_quantity'])
@@ -275,44 +277,52 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		used_list_qty 		= int(used_price_list_details['total_quantity'])
 		###################
 		# New Sales
+		new_median_sale_price = -1
 		if new_sale_qty >= 1:
 			new_sale_prices = []
 			for item in new_price_sale_details['price_detail']:
+				if int(item['quantity']) < min_qty:
+					continue
 				new_sale_prices.append(int(float(item['unit_price'])*100))
-			new_median_sale_price = int(statistics.median(new_sale_prices))
+			if len(new_sale_prices) > 0:
+				new_median_sale_price = int(statistics.median(new_sale_prices))
 			del new_sale_prices
-		else:
-			new_median_sale_price = -1
 		###################
 		# Used Sales
+		used_median_sale_price = -1
 		if used_sale_qty >= 1:
 			used_sale_prices = []
 			for item in used_price_sale_details['price_detail']:
 				used_sale_prices.append(int(float(item['unit_price'])*100))
-			used_median_sale_price = int(statistics.median(used_sale_prices))
+				if int(item['quantity']) < min_qty:
+					continue
+			if len(used_sale_prices) > 0:
+				used_median_sale_price = int(statistics.median(used_sale_prices))
 			del used_sale_prices
-		else:
-			used_median_sale_price = -1
 		###################
 		# New Sales
+		new_median_list_price = -1
 		if new_list_qty >= 1:
 			new_list_prices = []
 			for item in new_price_list_details['price_detail']:
 				new_list_prices.append(int(float(item['unit_price'])*100))
-			new_median_list_price = int(statistics.median(new_list_prices))
+				if int(item['quantity']) < min_qty:
+					continue
+			if len(new_list_prices) > 0:
+				new_median_list_price = int(statistics.median(new_list_prices))
 			del new_list_prices
-		else:
-			new_median_list_price = -1
 		###################
 		# Used Sales
+		used_median_list_price = -1
 		if used_list_qty >= 1:
 			used_list_prices = []
 			for item in used_price_list_details['price_detail']:
+				if int(item['quantity']) < min_qty:
+					continue
 				used_list_prices.append(int(float(item['unit_price'])*100))
-			used_median_list_price = int(statistics.median(used_list_prices))
+			if len(used_list_prices) > 0:
+				used_median_list_price = int(statistics.median(used_list_prices))
 			del used_list_prices
-		else:
-			used_median_list_price = -1
 		###################
 		price_data = {
 			'item_id':					item_id,
@@ -321,7 +331,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'new_median_sale_price': 	new_median_sale_price,
 			'new_sale_qty': 			new_sale_qty,
 			##=========
-			'used_avg_sale_price': 	used_avg_sale_price,
+			'used_avg_sale_price': 		used_avg_sale_price,
 			'used_median_sale_price': 	used_median_sale_price,
 			'used_sale_qty': 			used_sale_qty,
 			##=========
@@ -333,7 +343,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'used_median_list_price': 	used_median_list_price,
 			'used_list_qty': 			used_list_qty,
 			##=========
-			'time':					int(time.time()),
+			'time':						int(time.time()),
 		}
 		if verbose is True:
 			print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from BrickLink'.format(
@@ -348,7 +358,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		key = str(item_id)
 		if color_id is not None:
 			key = '{0}_{1}'.format(item_id, color_id)
-		self.bricklink_price_cache[key] = price_data
+		if min_qty == 1:
+			self.bricklink_price_cache[key] = price_data
 		self.price_count += 1
 		if self.price_count % 10 == 0:
 			self.save_cache(single_cache_name='bricklink_price_cache')
@@ -389,12 +400,12 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getSetPriceData(self, setID, verbose=False):
+	def getSetPriceData(self, setID, min_qty=1, verbose=False):
 		""" compile price data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		###################
 		price_data = self._lookUpPriceDataCache(setID, verbose=verbose)
-		if price_data is not None:
+		if min_qty == 1 and price_data is not None:
 			return price_data
 		###################
 		used_price_sale_details = self.getSetPriceDetails(setID, guide_type='sold', new_or_used='U', verbose=verbose)
@@ -403,7 +414,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		new_price_list_details 	= self.getSetPriceDetails(setID, guide_type='stock', new_or_used='N', verbose=verbose)
 		price_data = self._compilePriceData(setID,
 			new_price_sale_details, used_price_sale_details,
-			new_price_list_details, used_price_list_details)
+			new_price_list_details, used_price_list_details, min_qty=min_qty)
 		return price_data
 
 	#============================
@@ -425,11 +436,11 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getPartPriceData(self, partID, colorID=None, verbose=False):
+	def getPartPriceData(self, partID, colorID=None, min_qty=1, verbose=False):
 		""" compile price data from BrickLink using the string partID """
 		###################
 		price_data = self._lookUpPriceDataCache(partID, color_id=colorID, verbose=verbose)
-		if price_data is not None:
+		if min_qty == 1 and price_data is not None:
 			return price_data
 		###################
 		used_price_sale_details = self.getPartPriceDetails(partID, colorID, guide_type='sold', new_or_used='U', verbose=verbose)
@@ -439,7 +450,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		price_data = self._compilePriceData(partID,
 			new_price_sale_details, used_price_sale_details,
 			new_price_list_details, used_price_list_details,
-			color_id=colorID,)
+			color_id=colorID, min_qty=min_qty)
 		return price_data
 
 	#============================
@@ -460,10 +471,10 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
-	def getMinifigPriceData(self, minifigID, verbose=False):
+	def getMinifigPriceData(self, minifigID, min_qty=1, verbose=False):
 		""" compile price data from BrickLink using an string minifigID """
 		price_data = self._lookUpPriceDataCache(minifigID, verbose=verbose)
-		if price_data is not None:
+		if min_qty == 1 and price_data is not None:
 			return price_data
 		used_price_sale_details = self.getMinifigPriceDetails(minifigID, guide_type='sold', new_or_used='U', verbose=verbose)
 		new_price_sale_details 	= self.getMinifigPriceDetails(minifigID, guide_type='sold', new_or_used='N', verbose=verbose)
@@ -472,6 +483,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		price_data = self._compilePriceData(minifigID,
 			new_price_sale_details, used_price_sale_details,
 			new_price_list_details, used_price_list_details,
+			min_qty=min_qty,
 			)
 		return price_data
 
@@ -577,6 +589,68 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 				partID, part_data.get('name'),part_data.get('year_released'),))
 		self.bricklink_part_cache[partID] = part_data
 		return part_data
+
+	#============================
+	#============================
+	def getWeightedAveragePrice(self, price_data, new_or_used='N', verbose=True):
+		if new_or_used == 'U':
+			prefix = 'used_'
+		else:
+			prefix = 'new_'
+
+		mean_price = 0.15
+		mean_qty = 100
+
+		sale_mp = price_data.get(prefix+'median_sale_price')
+		sale_ap = price_data.get(prefix+'avg_sale_price')
+		sale_p = (sale_mp + sale_ap)/200.
+		sale_q = price_data.get(prefix+'sale_qty')
+
+		list_p = price_data.get(prefix+'median_list_price')/100.
+		list_q = price_data.get(prefix+'list_qty')
+
+		if sale_q <= 2 and list_q <= 200:
+			return None
+
+		weighted_sale_price = sale_q/(sale_q + mean_qty) * sale_p + mean_qty/(sale_q + mean_qty) * mean_price
+		weighted_list_price = list_q/(list_q + mean_qty) * list_p + mean_qty/(list_q + mean_qty) * mean_price
+
+		weighted_price = ( (weighted_sale_price * sale_q + weighted_list_price * math.sqrt(list_q) ) /
+			( sale_q + math.sqrt(list_q) ))
+
+
+		return weighted_price
+
+	#============================
+	#============================
+	def elementIDtoPartIDandColorID(self, elementID, verbose=True):
+		""" get part ID and color ID from BrickLink using a elementID number"""
+		###################
+		elementID = int(elementID)
+		###################
+		###################
+		map_list = self.bricklink_element_id_map_cache.get(elementID)
+		if map_list is not None and isinstance(map_list, list) and len(map_list) == 2:
+			partID, colorID = map_list
+			if verbose is True:
+				print('ELEMENT ID {0} -- part {1} color {2} -- from cache'.format(elementID, partID, colorID))
+			return [partID, colorID]
+		try:
+			map_data = self._bricklink_get('item_mapping/{0}'.format(elementID))
+		except LookupError:
+			print("UNKNOWN Element ID")
+			return None
+		#print(map_data)
+		partID = str(map_data[0]['item']['no'])
+		colorID = int(map_data[0]['color_id'])
+		#sys.exit(1)
+		###################
+		#print(part_data)
+		if verbose is True:
+			print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
+				elementID, partID, colorID))
+		self.bricklink_element_id_map_cache[elementID] = [partID, colorID]
+		return [partID, colorID]
 
 
 if __name__ == "__main__":
