@@ -5,7 +5,9 @@ import math
 import time
 import yaml
 import random
+import requests
 import statistics
+
 import wrapper_base
 import bricklink.api
 
@@ -18,8 +20,10 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		self.bricklink_api = bricklink.api.BrickLinkAPI(
 		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
 		  self.api_data['token_value'], self.api_data['token_secret'])
-
+		self.color_dict = None
 		self.price_count = 0
+		self.image_checks = 0
+		self.image_url_checks = {}
 		self.data_caches = {
 			'bricklink_category_cache': 		'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
@@ -44,6 +48,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		time.sleep(random.random())
 		status, headers, response = self.bricklink_api.get(url)
 		self.api_calls += 1
+		sys.stderr.write('#')
+		#sys.stderr.flush()
 		self.api_log.append(url)
 		error_msg = False
 		if ( response.get('data') is None
@@ -59,9 +65,38 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		data = response['data']
 		if isinstance(data, dict):
 			data['time'] = int(time.time())
-		if self.api_calls % 100 == 0:
+		if self.api_calls % 50 == 0:
 			self.save_cache()
 		return data
+
+	#============================
+	#============================
+	def getColorList(self):
+		colors_data = self._bricklink_get('colors')
+		print("received data for {0} colors".format(len(colors_data)))
+		self.color_dict = {}
+		for color_data in colors_data:
+			#import pprint
+			#pprint.pprint(color_data)
+			if len(color_data.get('color_code', '')) == 6:
+				color_data['color_code'] = '#' + color_data.get('color_code')
+			color_id = color_data['color_id']
+			self.color_dict[color_id] = color_data
+		return
+
+	#============================
+	#============================
+	def getColorDataFromColorID(self, colorID):
+		if self.color_dict is None:
+			self.getColorList()
+		return self.color_dict[colorID]
+
+	#============================
+	#============================
+	def getColorNameFromColorID(self, colorID):
+		if self.color_dict is None:
+			self.getColorList()
+		return self.color_dict[colorID]['color_name']
 
 	#============================
 	#============================
@@ -277,14 +312,16 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		used_list_qty 		= int(used_price_list_details['total_quantity'])
 		###################
 		# New Sales
+		minimum_prices_for_calc = 5
 		new_median_sale_price = -1
 		if new_sale_qty >= 1:
 			new_sale_prices = []
 			for item in new_price_sale_details['price_detail']:
 				if int(item['quantity']) < min_qty:
 					continue
-				new_sale_prices.append(int(float(item['unit_price'])*100))
-			if len(new_sale_prices) > 0:
+				for i in range(int(item['quantity'])):
+					new_sale_prices.append(int(float(item['unit_price'])*100))
+			if len(new_sale_prices) > minimum_prices_for_calc:
 				new_median_sale_price = int(statistics.median(new_sale_prices))
 			del new_sale_prices
 		###################
@@ -293,10 +330,11 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if used_sale_qty >= 1:
 			used_sale_prices = []
 			for item in used_price_sale_details['price_detail']:
-				used_sale_prices.append(int(float(item['unit_price'])*100))
 				if int(item['quantity']) < min_qty:
 					continue
-			if len(used_sale_prices) > 0:
+				for i in range(int(item['quantity'])):
+					used_sale_prices.append(int(float(item['unit_price'])*100))
+			if len(used_sale_prices) > minimum_prices_for_calc:
 				used_median_sale_price = int(statistics.median(used_sale_prices))
 			del used_sale_prices
 		###################
@@ -305,11 +343,17 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if new_list_qty >= 1:
 			new_list_prices = []
 			for item in new_price_list_details['price_detail']:
-				new_list_prices.append(int(float(item['unit_price'])*100))
 				if int(item['quantity']) < min_qty:
 					continue
-			if len(new_list_prices) > 0:
+				for i in range(int(item['quantity'])):
+					new_list_prices.append(int(float(item['unit_price'])*100))
+			if len(new_list_prices) > minimum_prices_for_calc:
 				new_median_list_price = int(statistics.median(new_list_prices))
+				new_list_prices2 = []
+				for listp in new_list_prices:
+					if listp <= new_median_list_price:
+						new_list_prices2.append(listp)
+				new_median_list_price = int(statistics.median(new_list_prices2))
 			del new_list_prices
 		###################
 		# Used Sales
@@ -319,9 +363,16 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			for item in used_price_list_details['price_detail']:
 				if int(item['quantity']) < min_qty:
 					continue
-				used_list_prices.append(int(float(item['unit_price'])*100))
-			if len(used_list_prices) > 0:
+				for i in range(int(item['quantity'])):
+					used_list_prices.append(int(float(item['unit_price'])*100))
+			if len(used_list_prices) > minimum_prices_for_calc:
 				used_median_list_price = int(statistics.median(used_list_prices))
+				used_list_prices2 = []
+				for listp in used_list_prices:
+					if listp <= used_median_list_price:
+						used_list_prices2.append(listp)
+				print(len(used_list_prices2), len(used_list_prices))
+				used_median_list_price = int(statistics.median(used_list_prices2))
 			del used_list_prices
 		###################
 		price_data = {
@@ -346,7 +397,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'time':						int(time.time()),
 		}
 		if verbose is True:
-			print('PRICE {0} -- ${1:.2f} -- ${2:.2f} -- ${3:.2f} -- ${4:.2f} -- from BrickLink'.format(
+			print('PRICE {0} -- ns ${1:.2f} -- nl ${3:.2f} -- us ${2:.2f} -- ul ${4:.2f} -- from BrickLink'.format(
 				price_data.get('item_id'),
 				float(price_data.get( 'new_median_sale_price'))/100.,
 				float(price_data.get('used_median_sale_price'))/100.,
@@ -394,8 +445,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		###################
 		if verbose is True and qty > 1:
 			avg_price = float(price_details['avg_price'])
-			print('SET {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
-				setID, avg_price, qty))
+			print('SET {0} -- ${1:.2f} average price for {2} {3} {4} -- from BrickLink website'.format(
+				setID, avg_price, qty, new_or_used, guide_type))
 		return price_details
 
 	#============================
@@ -430,8 +481,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		###################
 		if verbose is True and qty > 1:
 			avg_price = float(price_details['avg_price'])
-			print('PART {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
-				partID, avg_price, qty))
+			print('PART {0} -- ${1:.2f} average price for {2} {3} {4} -- from BrickLink website'.format(
+				partID, avg_price, qty, new_or_used, guide_type))
 		return price_details
 
 	#============================
@@ -465,8 +516,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		avg_price = float(price_details['avg_price'])
 		qty = price_details['total_quantity']
 		if verbose is True and qty > 1:
-			print('MINIFIG {0} -- ${1:.2f} average price for {2} sales -- from BrickLink website'.format(
-				minifigID, avg_price, qty))
+			print('MINIFIG {0} -- ${1:.2f} average price for {2} {3} {4} -- from BrickLink website'.format(
+				minifigID, avg_price, qty, new_or_used, guide_type))
 		return price_details
 
 	#============================
@@ -618,7 +669,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		weighted_price = ( (weighted_sale_price * sale_q + weighted_list_price * math.sqrt(list_q) ) /
 			( sale_q + math.sqrt(list_q) ))
 
-
+		print('WEIGHTED PRICE ID ${0:.2f} -- {1}'.format(weighted_price, new_or_used))
 		return weighted_price
 
 	#============================
@@ -650,8 +701,96 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
 				elementID, partID, colorID))
 		self.bricklink_element_id_map_cache[elementID] = [partID, colorID]
+		key_str = "{0},{1}".format(partID, colorID)
+		self.bricklink_element_id_map_cache[key_str] = elementID
 		return [partID, colorID]
 
+	#============================
+	#============================
+	# Helper function to check if the image exists at a given URL
+	def image_exists(self, url, verbose=True):
+		if self.image_url_checks.get(url, None) is not None:
+			return self.image_url_checks[url]
+		if verbose:
+			print(f"check {url}")
+		self.image_checks += 1
+		if self.image_checks % 20 == 0:
+			self.save_cache("bricklink_element_id_map_cache")
+		time.sleep(random.random())
+		response = requests.get(url)
+		if response.status_code == 200:
+			if verbose:
+				print("success")
+			self.image_url_checks[url] = True
+			return True
+		else:
+			if verbose:
+				print("FAIL")
+			self.image_url_checks[url] = False
+			return False
+
+	#============================
+	#============================
+	# Helper function to check if the image exists at a given URL
+	def elementID_image_exists(self, elementID):
+		url = "https://www.lego.com/cdn/product-assets/"
+		url += f"element.img.lod5photo.192x192/{elementID}.jpg"
+		return self.image_exists(url)
+
+	#============================
+	#============================
+	def partIDandColorIDtoElementID(self, partID, colorID, verbose=True):
+		""" get part ID and color ID from BrickLink using a elementID number"""
+		###################
+		#partID = int(partID)
+		colorID = int(colorID)
+		###################
+		###################
+		key_str = "{0},{1}".format(partID, colorID)
+		elementID = self.bricklink_element_id_map_cache.get(key_str)
+		# Check if the elementID is already cached
+		if elementID is not None:
+			# Print the cached elementID if verbose is enabled
+			if verbose:
+				print('ELEMENT ID {0} -- part {1} color {2} -- from cache'.format(elementID, partID, colorID))
+			# With a 99% chance, return the cached elementID without checking the image
+			if random.random() > 0.01:
+				return elementID
+			# For the remaining 1%, return the cached elementID only if its associated image exists
+			elif self.elementID_image_exists(elementID):
+				return elementID
+			#else find a new elementID below
+
+		try:
+			map_data = self._bricklink_get('item_mapping/PART/{0}?color_id={1}'.format(partID, colorID))
+		except LookupError:
+			print("UNKNOWN partID, colorID")
+			return None
+		element_id_list = []
+		for data in reversed(map_data):
+			elementID = int(data['element_id'])
+			element_id_list.append(elementID)
+		element_id_list.sort()
+
+		print(f"Found {len(map_data)} element IDs for part {partID} and color {colorID}")
+		# Loop through all elementIDs in the map_data
+		for elementID in reversed(element_id_list):
+			if self.elementID_image_exists(elementID):
+				# Check if the image exists at the generated URL
+				if verbose:
+					print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
+						elementID, partID, colorID))
+				self.bricklink_element_id_map_cache[elementID] = [partID, colorID]
+				key_str = "{0},{1}".format(partID, colorID)
+				self.bricklink_element_id_map_cache[key_str] = elementID
+				return str(elementID)
+		# Return None if the loop completes without finding any images
+		print("FAILED to find Element ID with a Lego CDN image")
+		elementID = element_id_list[-1]
+		if verbose:
+			print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
+					elementID, partID, colorID))
+		return str(elementID)
 
 if __name__ == "__main__":
 	BL = BrickLink()
