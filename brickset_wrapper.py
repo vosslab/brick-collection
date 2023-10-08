@@ -29,6 +29,7 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 			'brickset_minifig_cache': 		'json',
 			'brickset_minifig_set_cache': 	'json',
 		}
+		self.api_calls = 0
 		self.start()
 
 	#============================
@@ -37,6 +38,7 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		time.sleep(random.random())
 		self.api_calls += 1
 		response = brickse.lego.get_set(set_number=set_number, extended_data=False)
+		sys.stderr.write('#')
 		data = json.loads(response.read())
 		if data['status'] != "success":
 			self.save_cache()
