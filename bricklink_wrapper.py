@@ -146,6 +146,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID, verbose)
+		set_data['set_id'] = setID
 		return set_data
 
 	#============================
@@ -154,7 +155,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID, verbose)
-		#price_dict = self.getSetPriceData(setID)
+		price_data = self.getSetPriceData(setID)
+		set_data.update(price_data)
+		set_data['set_id'] = setID
 		return set_data
 
 	#============================

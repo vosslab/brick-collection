@@ -1,4 +1,3 @@
-
 import os
 import sys
 import json
@@ -7,9 +6,16 @@ import yaml
 import random
 
 class BaseWrapperClass(object):
+	"""
+	Base wrapper class to manage caching and API interactions.
+	"""
+
 	#============================
 	#============================
 	def __init__(self):
+		"""
+		Initialize the BaseWrapperClass with default settings.
+		"""
 		self.api_key = None
 
 		# YAML is more readable than JSON
@@ -21,7 +27,7 @@ class BaseWrapperClass(object):
 		# JSON is a subset of JavaScript with bracketed syntax
 		# JSON uses less characters because it doesn't use whitespace to represent hierarchy
 		# JSON allows duplicate keys, which is invalid PYTHON and YAML
-		# JSON is prferred by web developers for APIs, many web programmers are not aware YAML exists
+		# JSON is preferred by web developers for APIs, many web programmers are not aware YAML exists
 
 		# When the CACHE file is BIG and contains lots of details... use JSON
 		# When the CACHE file is SIMPLE and might require EDITING... use YAML/YML
@@ -36,8 +42,11 @@ class BaseWrapperClass(object):
 	#============================
 	#============================
 	def start(self):
+		"""
+		Start the wrapper with initial settings and load cache.
+		"""
 		self.expire_time = 14 * 24 * 3600 # 14 days, in seconds
-		self.data_refresh_cutoff = 0.0001 # 1% of the data is refreshed
+		self.data_refresh_cutoff = 0.0001 # 0.01% chance of refreshing data
 		self.api_calls = 0
 		self.api_log = []
 		self.load_cache()
@@ -45,23 +54,26 @@ class BaseWrapperClass(object):
 	#============================
 	#============================
 	def load_cache(self):
+		"""
+		Load cache data from files.
+		"""
 		print('==== LOAD CACHE ====')
-		for cache_name,cache_format in self.data_caches.items():
+		for cache_name, cache_format in self.data_caches.items():
 			if cache_format == 'yaml':
 				cache_format = 'yml'
-			file_name = 'CACHE/'+cache_name+'.'+cache_format
+			file_name = 'CACHE/' + cache_name + '.' + cache_format
 			if os.path.isfile(file_name):
 				try:
 					t0 = time.time()
 					if cache_format == 'json':
-						cache_data = json.load( open(file_name, 'r') )
+						cache_data = json.load(open(file_name, 'r'))
 					elif cache_format == 'yml':
-						cache_data =  yaml.safe_load( open(file_name, 'r') )
+						cache_data = yaml.safe_load(open(file_name, 'r'))
 					else:
-						print("UNKNOWN CACHE FORMAT: ", cache_data)
+						print("UNKNOWN CACHE FORMAT: ", cache_format)
 						sys.exit(1)
-					print('.. loaded {0} entires from {1} in {2:,d} usec'.format(
-						len(cache_data), file_name, int((time.time()-t0)*1e6)))
+					print('.. loaded {0} entries from {1} in {2:,d} usec'.format(
+						len(cache_data), file_name, int((time.time() - t0) * 1e6)))
 				except IOError:
 					cache_data = {}
 			else:
@@ -72,6 +84,9 @@ class BaseWrapperClass(object):
 	#============================
 	#============================
 	def close(self):
+		"""
+		Close the wrapper and save cache data.
+		"""
 		self.save_cache()
 		#self.api_log.sort()
 		#print(self.api_log)
@@ -79,7 +94,13 @@ class BaseWrapperClass(object):
 
 	#============================
 	#============================
-	def save_cache(self, single_cache_name=None):
+	def save_cache(self, single_cache_name: str = None):
+		"""
+		Save cache data to files.
+
+		Args:
+			single_cache_name: Optional; name of a single cache to save.
+		"""
 		print('==== SAVE CACHE ====')
 		if not os.path.isdir('CACHE'):
 			os.mkdir('CACHE')
@@ -90,24 +111,33 @@ class BaseWrapperClass(object):
 			if cache_format == 'yaml':
 				cache_format = 'yml'
 			t0 = time.time()
-			file_name = 'CACHE/'+cache_name+'.'+cache_format
+			file_name = 'CACHE/' + cache_name + '.' + cache_format
 			cache_data = getattr(self, cache_name)
 			if len(cache_data) > 0:
-				if cache_format == 'json':
-					json.dump( cache_data, open( file_name, 'w') )
-				elif cache_format == 'yml':
-					yaml.dump( cache_data, open( file_name, 'w') )
-				else:
-					print("UNKNOWN CACHE FORMAT: ", cache_data)
-					sys.exit(1)
-				print('.. wrote {0} entires to {1} in {2:,d} usec'.format(
-					len(cache_data), file_name, int((time.time()-t0)*1e6)))
+				with open(file_name, 'w') as f:
+					if cache_format == 'json':
+						json.dump(cache_data, f)
+					elif cache_format == 'yml':
+						yaml.dump(cache_data, f)
+					else:
+						print("UNKNOWN CACHE FORMAT: ", cache_format)
+						sys.exit(1)
+				print('.. wrote {0} entries to {1} in {2:,d} usec'.format(
+					len(cache_data), file_name, int((time.time() - t0) * 1e6)))
 		print('==== END CACHE ====')
 
 	#============================
 	#============================
-	def _check_lego_ID(self, legoID):
-		""" check to make sure number is valid """
+	def _check_lego_ID(self, legoID: int) -> bool:
+		"""
+		Check if a LEGO ID is valid.
+
+		Args:
+			legoID: LEGO ID to check.
+
+		Returns:
+			True if valid, otherwise raises an error.
+		"""
 		if not isinstance(legoID, int):
 			legoID = int(legoID)
 		if legoID < 3000:
@@ -120,12 +150,20 @@ class BaseWrapperClass(object):
 
 	#============================
 	#============================
-	def _check_set_ID(self, setID):
-		""" check to make sure number is valid """
+	def _check_set_ID(self, setID: str) -> bool:
+		"""
+		Check if a set ID is valid.
+
+		Args:
+			setID: Set ID to check.
+
+		Returns:
+			True if valid, otherwise raises an error.
+		"""
 		if isinstance(setID, int):
 			print("Error: invalid setID, integer", setID)
 			raise TypeError
-		if not '-' in setID:
+		if '-' not in setID:
 			print("Error: invalid setID, no hyphen", setID)
 			raise KeyError
 		legoID = setID.split('-')[0]
@@ -137,8 +175,16 @@ class BaseWrapperClass(object):
 
 	#============================
 	#============================
-	def _check_if_data_valid(self, cache_data_dict):
-		""" common function of data expiration """
+	def _check_if_data_valid(self, cache_data_dict: dict) -> bool:
+		"""
+		Check if cache data is valid and not expired.
+
+		Args:
+			cache_data_dict: Dictionary containing cache data.
+
+		Returns:
+			True if data is valid, otherwise False.
+		"""
 		if cache_data_dict is None:
 			return False
 		###################
@@ -157,11 +203,8 @@ class BaseWrapperClass(object):
 		###################
 		if random.random() < self.data_refresh_cutoff:
 			print('... random data refresh')
-			# reset data to None, 10% of the time
+			# reset data to None, 0.01% of the time
 			# keeps the data fresh
 			return False
 		###################
 		return True
-
-#============================
-#============================
