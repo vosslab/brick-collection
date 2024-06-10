@@ -27,7 +27,7 @@ if __name__ == '__main__':
 		f = open(args.csvfile, 'r')
 		for line in f:
 			sline = line.strip()
-			if len(sline) != 7:
+			if len(sline) < 4 or len(sline) > 7:
 				continue
 			if sline.startswith('#'):
 				continue
@@ -51,23 +51,31 @@ if __name__ == '__main__':
 	allkeys = None
 	for elementID in elementIDs:
 		line += 1
+		skip = False
 		print("\nELEMENT {0} of {1}".format(line, len(elementIDs)))
+		t0 = time.time()
 		map_list = BLW.elementIDtoPartIDandColorID(elementID)
 		if map_list is None or len(map_list) != 2:
-			continue
-		partID, colorID = map_list
-		time.sleep(random.random())
-		price_data = BLW.getPartPriceData(partID, colorID, min_qty=40)
-		weighted_price = BLW.getWeightedAveragePrice(price_data, new_or_used='N')
+			data = {
+				'element id': elementID,
+			}
+		else:
+			partID, colorID = map_list
 
-		url = 'https://www.bricklink.com/v2/catalog/catalogitem.page?P={0}#T=S&C={1}'.format(partID, colorID)
-		data = {
-			'element id': elementID,
-			'BL part id': partID,
-			'BL color id': colorID,
-			'BL url': url,
-			'weighted price': weighted_price,
-		}
+			price_data = BLW.getPartPriceData(partID, colorID, min_qty=1, verbose=True)
+			weighted_price = BLW.getWeightedAveragePrice(price_data, new_or_used='N')
+
+			if time.time() - t0 > 0.1:
+				time.sleep(random.random())
+
+			url = 'https://www.bricklink.com/v2/catalog/catalogitem.page?P={0}#T=S&C={1}'.format(partID, colorID)
+			data = {
+				'element id': elementID,
+				'BL part id': partID,
+				'BL color id': colorID,
+				'weighted price': weighted_price,
+				'zBL url': url,
+			}
 		###
 		#data.update(price_data)
 		#sys.exit(1)
@@ -83,7 +91,7 @@ if __name__ == '__main__':
 			if value is None:
 				print("missing key: "+key)
 				f.write("\t")
-			if isinstance(value, int):
+			elif isinstance(value, int):
 				f.write("{0:d}\t".format(value))
 			elif isinstance(value, float):
 				f.write("{0:.3f}\t".format(value))
@@ -95,9 +103,11 @@ if __name__ == '__main__':
 				else:
 					f.write("{0}\t".format(value))
 			else:
+				print("skipping key: "+key)
 				f.write("\t")
 		f.write("\n")
-		#if line > 10:
+		if line % 10 == 0:
+			BLW.save_cache()
 
 	f.close()
 	BLW.close()
