@@ -5,7 +5,9 @@ import math
 import time
 import yaml
 import random
+import requests
 import statistics
+
 import wrapper_base
 import bricklink.api
 
@@ -20,6 +22,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		  self.api_data['token_value'], self.api_data['token_secret'])
 		self.color_dict = None
 		self.price_count = 0
+		self.image_checks = 0
+		self.image_url_checks = {}
 		self.data_caches = {
 			'bricklink_category_cache': 		'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
@@ -61,7 +65,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		data = response['data']
 		if isinstance(data, dict):
 			data['time'] = int(time.time())
-		if self.api_calls % 100 == 0:
+		if self.api_calls % 50 == 0:
 			self.save_cache()
 		return data
 
@@ -72,6 +76,10 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		print("received data for {0} colors".format(len(colors_data)))
 		self.color_dict = {}
 		for color_data in colors_data:
+			#import pprint
+			#pprint.pprint(color_data)
+			if len(color_data.get('color_code', '')) == 6:
+				color_data['color_code'] = '#' + color_data.get('color_code')
 			color_id = color_data['color_id']
 			self.color_dict[color_id] = color_data
 		return
@@ -699,6 +707,38 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	# Helper function to check if the image exists at a given URL
+	def image_exists(self, url, verbose=True):
+		if self.image_url_checks.get(url, None) is not None:
+			return self.image_url_checks[url]
+		if verbose:
+			print(f"check {url}")
+		self.image_checks += 1
+		if self.image_checks % 20 == 0:
+			self.save_cache("bricklink_element_id_map_cache")
+		time.sleep(random.random())
+		response = requests.get(url)
+		if response.status_code == 200:
+			if verbose:
+				print("success")
+			self.image_url_checks[url] = True
+			return True
+		else:
+			if verbose:
+				print("FAIL")
+			self.image_url_checks[url] = False
+			return False
+
+	#============================
+	#============================
+	# Helper function to check if the image exists at a given URL
+	def elementID_image_exists(self, elementID):
+		url = "https://www.lego.com/cdn/product-assets/"
+		url += f"element.img.lod5photo.192x192/{elementID}.jpg"
+		return self.image_exists(url)
+
+	#============================
+	#============================
 	def partIDandColorIDtoElementID(self, partID, colorID, verbose=True):
 		""" get part ID and color ID from BrickLink using a elementID number"""
 		###################
@@ -708,28 +748,48 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		###################
 		key_str = "{0},{1}".format(partID, colorID)
 		elementID = self.bricklink_element_id_map_cache.get(key_str)
+		# Check if the elementID is already cached
 		if elementID is not None:
-			if verbose is True:
+			# Print the cached elementID if verbose is enabled
+			if verbose:
 				print('ELEMENT ID {0} -- part {1} color {2} -- from cache'.format(elementID, partID, colorID))
-			return elementID
+			# With a 99% chance, return the cached elementID without checking the image
+			if random.random() > 0.01:
+				return elementID
+			# For the remaining 1%, return the cached elementID only if its associated image exists
+			elif self.elementID_image_exists(elementID):
+				return elementID
+			#else find a new elementID below
 		try:
 			map_data = self._bricklink_get('item_mapping/PART/{0}?color_id={1}'.format(partID, colorID))
 		except LookupError:
 			print("UNKNOWN partID, colorID")
 			return None
-		#print(map_data)
-		elementID = str(map_data[-1]['element_id'])
-		#sys.exit(1)
-		###################
-		#print(part_data)
-		if verbose is True:
-			print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
-				elementID, partID, colorID))
-		self.bricklink_element_id_map_cache[elementID] = [partID, colorID]
-		key_str = "{0},{1}".format(partID, colorID)
-		self.bricklink_element_id_map_cache[key_str] = elementID
-		return elementID
+		element_id_list = []
+		for data in reversed(map_data):
+			elementID = int(data['element_id'])
+			element_id_list.append(elementID)
+		element_id_list.sort()
 
+		print(f"Found {len(map_data)} element IDs for part {partID} and color {colorID}")
+		# Loop through all elementIDs in the map_data
+		for elementID in reversed(element_id_list):
+			if self.elementID_image_exists(elementID):
+				# Check if the image exists at the generated URL
+				if verbose:
+					print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
+						elementID, partID, colorID))
+				self.bricklink_element_id_map_cache[elementID] = [partID, colorID]
+				key_str = "{0},{1}".format(partID, colorID)
+				self.bricklink_element_id_map_cache[key_str] = elementID
+				return str(elementID)
+		# Return None if the loop completes without finding any images
+		print("FAILED to find Element ID with a Lego CDN image")
+		elementID = element_id_list[-1]
+		if verbose:
+			print('ELEMENT ID {0} -- part {1} color {2} -- from BrickLink website'.format(
+					elementID, partID, colorID))
+		return str(elementID)
 
 if __name__ == "__main__":
 	BL = BrickLink()

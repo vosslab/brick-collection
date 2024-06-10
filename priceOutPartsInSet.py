@@ -79,10 +79,10 @@ def collect_data_for_part(part_dict, BLW, args):
 		data.update(price_data)
 
 	# Calculate the total quantity
-	data['sale price'] = data.get('new_median_sale_price', -1)
+	data['sale price'] = data.get('new_median_sale_price', -100)/100.0
 	data['total quantity'] = data.get('extra_quantity', 0) + data.get('quantity', 0)
 	data['category name'] = BLW.getCategoryName(part_data['category_id'])
-	data['lot value'] = data.get('total quantity', 1) * data.get('sale price', -1)
+	data['lot value'] = (data.get('total quantity', 1) * data.get('sale price', -1))
 
 	# Remove fields that are long and not necessary for the CSV
 	data.pop('description', None)
