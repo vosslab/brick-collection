@@ -1,0 +1,20 @@
+argparse
+bricklink-api  # This might need to be updated with the correct package name
+brickse  # This might need to be updated with the correct package name
+copy
+csv
+html
+json
+libbrick  # This might need to be updated with the correct package name
+math
+os
+random
+re
+rebrick  # This might need to be updated with the correct package name
+requests
+shutil
+statistics
+string
+sys
+time
+yaml
