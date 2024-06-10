@@ -45,8 +45,13 @@ def get_set_data_output(setID: str, RBW: rebrick_wrapper.Rebrick, allkeys: list)
 
 	row = []
 	for key in allkeys:
+
 		try:
-			row.append(str(data[key]))
+			if '{' in str(data.get(key, "")):
+				row.append("")
+				continue
+			row.append(str(data[key]).replace('\n', ''))
+
 		except KeyError:
 			print(f"missing key: {key}")
 			row.append("")

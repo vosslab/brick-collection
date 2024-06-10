@@ -15,7 +15,7 @@ latex_header = r"""
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{fontspec}
-\setsansfont[Ligatures=TeX]{Liberation Sans Narrow}
+\setsansfont[Ligatures=TeX]{PT Sans Narrow}
 \definecolor{DarkBlue}{RGB}{0,0,100}
 
 \newenvironment{legocell}[1]
@@ -78,6 +78,53 @@ def downloadImage(image_url: str, filename: str = None) -> str:
 		print(f"!! image couldn't be retrieved: {image_url}")
 	return filename
 
+def format_price_info(new_price: float, new_qty: int, used_price: float, used_qty: int) -> str:
+	"""
+	Format the price information for the LaTeX label.
+
+	Args:
+		new_price: Median sale price for new sets.
+		new_qty: Quantity of new sets available.
+		used_price: Median sale price for used sets.
+		used_qty: Quantity of used sets available.
+
+	Returns:
+		Formatted LaTeX string for the price information.
+	"""
+	price_info = r'{\sffamily\scriptsize sale: '
+	if new_price > 0 and used_price > 0:
+		price_info += f'\\${new_price/100:.2f} new ({new_qty}) / \\${used_price/100:.2f} used ({used_qty})'
+	elif new_qty > 0 and new_price > 0:
+		price_info += f'\\${new_price/100:.2f} new ({new_qty})'
+	elif used_qty > 0 and used_price > 0:
+		price_info += f'\\${used_price/100:.2f} used ({used_qty})'
+	price_info += r'}'
+	return price_info
+
+def format_list_info(new_list_price: float, new_list_qty: int, used_list_price: float, used_list_qty: int) -> str:
+	"""
+	Format the list price information for the LaTeX label.
+
+	Args:
+		new_list_price: Median list price for new sets.
+		new_list_qty: Quantity of new sets listed.
+		used_list_price: Median list price for used sets.
+		used_list_qty: Quantity of used sets listed.
+
+	Returns:
+		Formatted LaTeX string for the list price information.
+	"""
+	list_info = r'{\sffamily\scriptsize list: '
+	if new_list_price > 0 and used_list_price > 0:
+		list_info += f'\\${new_list_price/100:.2f} new ({new_list_qty}) / \\${used_list_price/100:.2f} used ({used_list_qty})'
+	elif new_list_qty > 0 and new_list_price > 0:
+		list_info += f'\\${new_list_price/100:.2f} new ({new_list_qty})'
+	elif used_list_qty > 0 and used_list_price > 0:
+		list_info += f'\\${used_list_price/100:.2f} used ({used_list_qty})'
+	list_info += r'}'
+	return list_info
+
+
 def makeLabel(set_dict: dict, price_dict: dict) -> str:
 	"""
 	Create a LaTeX formatted label for a LEGO set.
@@ -100,50 +147,36 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 
 	set_name = set_dict.get('name').replace('#', '').replace(' & ', ' and ')
 
-	latex_str  = (r'\begin{legocell}{' + filename + r'}\n')
-	latex_str += (r'\textbf{' + str(lego_id) + r'}\\\n')
-	latex_str += (r'{\sffamily\large ' + set_name + r'}\\\n')
-	latex_str += (r'\textsc{\color{DarkBlue}\normalsize ' + set_dict.get('category_name') + r'}\\\n')
-	latex_str += (r'(\textbf{' + set_dict.get('year_released') + r'})\n')
-	latex_str += (r'{\normalsize ' + set_dict.get('num_parts') + r' pieces}\\\n')
+	latex_str  = (r'\begin{legocell}{' + filename + r'}' + '\n')
+	latex_str += '    ' + (r'\textbf{' + str(lego_id) + r'}' + r'\\' + '\n')
+	latex_str += '    ' + (r'{\sffamily\large ' + set_name + r'}' + r'\\' + '\n')
+	latex_str += '    ' + (r'\textsc{\color{DarkBlue}\normalsize ' + set_dict.get('category_name') + r'}' + r'\\' + '\n')
+	latex_str += '    ' + (r'(\textbf{' + set_dict.get('year_released') + r'})' + r'\\' + '\n')
+	latex_str += '    ' + (r'{\normalsize ' + set_dict.get('num_parts') + r' pieces}' + r'\\' + '\n')
 
-	new_median_sale_price = float(price_dict['new_median_sale_price'])
-	used_median_sale_price = float(price_dict['used_median_sale_price'])
-	if new_median_sale_price > 0 or used_median_sale_price > 0:
-		new_sale_qty = int(price_dict['new_sale_qty'])
-		used_sale_qty = int(price_dict['used_sale_qty'])
+	latex_str += '    ' + format_price_info(
+		float(price_dict['new_median_sale_price']),
+		int(price_dict['new_sale_qty']),
+		float(price_dict['used_median_sale_price']),
+		int(price_dict['used_sale_qty'])
+	).replace(r'\\', r'\\\\') + '\n'
 
-		latex_str += r'{\sffamily\scriptsize '
-		latex_str += 'sale: '
-		if new_median_sale_price > 0 and used_median_sale_price > 0:
-			latex_str += f'${new_median_sale_price/100:.2f} new ({new_sale_qty:d}) / ${used_median_sale_price/100:.2f} used ({used_sale_qty:d})'
-		elif new_sale_qty > 0 and new_median_sale_price > 0:
-			latex_str += f'${new_median_sale_price/100:.2f} new ({new_sale_qty:d})'
-		elif used_sale_qty > 0 and used_median_sale_price > 0:
-			latex_str += f'${used_median_sale_price/100:.2f} used ({used_sale_qty:d})'
-		latex_str += r'}\\\n'
+	latex_str += '    ' + format_list_info(
+		float(price_dict['new_median_list_price']),
+		int(price_dict['new_list_qty']),
+		float(price_dict['used_median_list_price']),
+		int(price_dict['used_list_qty'])
+	).replace(r'\\', r'\\\\') + '\n'
 
-	new_median_list_price = float(price_dict['new_median_list_price'])
-	used_median_list_price = float(price_dict['used_median_list_price'])
-	if new_median_list_price > 0 or used_median_list_price > 0:
-		new_list_qty = int(price_dict['new_list_qty'])
-		used_list_qty = int(price_dict['used_list_qty'])
-		latex_str += r'{\sffamily\scriptsize '
-		latex_str += 'list: '
-		if new_median_list_price > 0 and used_median_list_price > 0:
-			latex_str += f'${new_median_list_price/100:.2f} new ({new_list_qty:d}) / ${used_median_list_price/100:.2f} used ({used_list_qty:d})'
-		elif new_list_qty > 0 and new_median_list_price > 0:
-			latex_str += f'${new_median_list_price/100:.2f} new ({new_list_qty:d})'
-		elif used_list_qty > 0 and used_median_list_price > 0:
-			latex_str += f'${used_median_list_price/100:.2f} used ({used_list_qty:d})'
-		latex_str += r'}\\\n'
-
-	latex_str += r'\end{legocell}\n'
+	latex_str += r'\end{legocell}' + '\n'
 	print(f'{lego_id} -- {set_dict.get("theme_name")} ({set_dict.get("year")}) -- {set_dict.get("name")}')
 
 	return latex_str
 
-if __name__ == '__main__':
+
+
+
+def main():
 	if len(sys.argv) < 2:
 		print("usage: ./makeLabels.py <rebrick csv txt file>")
 		sys.exit(1)
@@ -195,3 +228,7 @@ if __name__ == '__main__':
 		f.write(latex_footer)
 	BLwrap.close()
 	print(f'mogrify -verbose -trim images/set_*.jpg; \nxelatex {outfile}; \nopen {pdffile}')
+
+if __name__ == '__main__':
+	main()
+
