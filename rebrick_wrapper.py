@@ -80,6 +80,7 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 		print('SET {0} -- {1} ({2}) -- from Rebrick website'.format(
 			set_data.get('set_num'), set_data.get('name'), set_data.get('year'),))
 		set_data['time'] = int(time.time())
+		set_data['set_id'] = setID
 		self.rebrick_set_cache[setID] = set_data
 		if self.api_calls % 25 == 0:
 			self.save_cache()

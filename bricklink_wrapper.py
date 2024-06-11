@@ -147,6 +147,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID, verbose)
+		set_data['set_id'] = setID
 		return set_data
 
 	#============================
@@ -155,7 +156,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		""" get the set data from BrickLink using the string setID """
 		self._check_set_ID(setID)
 		set_data = self.getSetDataDirect(setID, verbose)
-		#price_dict = self.getSetPriceData(setID)
+		price_data = self.getSetPriceData(setID)
+		set_data.update(price_data)
+		set_data['set_id'] = setID
 		return set_data
 
 	#============================
@@ -779,7 +782,6 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			elif self.elementID_image_exists(elementID):
 				return elementID
 			#else find a new elementID below
-
 		try:
 			map_data = self._bricklink_get('item_mapping/PART/{0}?color_id={1}'.format(partID, colorID))
 		except LookupError:

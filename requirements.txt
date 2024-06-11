@@ -1,0 +1,6 @@
+python-bricklink-api
+brickse
+#libbrick  # This might need to be updated with the correct package name
+rebrick
+requests
+pyyaml

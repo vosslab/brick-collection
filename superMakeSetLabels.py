@@ -6,7 +6,10 @@ import time
 import random
 import shutil
 import requests
+
+import libbrick
 import bricklink_wrapper
+import rebrick_wrapper
 
 latex_header = r"""
 \documentclass[letterpaper]{article}% Avery 5163
@@ -62,10 +65,11 @@ def downloadImage(image_url: str, filename: str = None) -> str:
 		Filename of the saved image.
 	"""
 	if image_url is None:
-		return None
+		raise TypeError
 	if filename is None:
 		filename = os.path.basename(image_url)
 	if os.path.exists(filename):
+		print(".")
 		return filename
 	time.sleep(random.random())
 	r = requests.get(image_url, stream=True)
@@ -76,6 +80,7 @@ def downloadImage(image_url: str, filename: str = None) -> str:
 		print(f'.. image successfully downloaded: {filename}')
 	else:
 		print(f"!! image couldn't be retrieved: {image_url}")
+		raise FileNotFoundError
 	return filename
 
 def format_price_info(new_price: float, new_qty: int, used_price: float, used_qty: int) -> str:
@@ -143,6 +148,7 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 		os.mkdir('images')
 	filename = f"images/set_{set_id}.jpg"
 	image_url = set_dict.get('set_img_url')
+	print(filename)
 	downloadImage(image_url, filename)
 
 	set_name = set_dict.get('name').replace('#', '').replace(' & ', ' and ')
@@ -151,8 +157,8 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 	latex_str += '    ' + (r'\textbf{' + str(lego_id) + r'}' + r'\\' + '\n')
 	latex_str += '    ' + (r'{\sffamily\large ' + set_name + r'}' + r'\\' + '\n')
 	latex_str += '    ' + (r'\textsc{\color{DarkBlue}\normalsize ' + set_dict.get('category_name') + r'}' + r'\\' + '\n')
-	latex_str += '    ' + (r'(\textbf{' + set_dict.get('year_released') + r'})' + r'\\' + '\n')
-	latex_str += '    ' + (r'{\normalsize ' + set_dict.get('num_parts') + r' pieces}' + r'\\' + '\n')
+	latex_str += '    ' + (r'(\textbf{' + str(set_dict.get('year_released')) + r'})' + r'\\' + '\n')
+	latex_str += '    ' + (r'{\normalsize ' + str(set_dict.get('num_parts')) + r' pieces}' + r'\\' + '\n')
 
 	latex_str += '    ' + format_price_info(
 		float(price_dict['new_median_sale_price']),
@@ -173,62 +179,65 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 
 	return latex_str
 
-
-
-
+#============================
+#============================
 def main():
+	"""
+	Main function to look up LEGO set data using BrickLink API and generate LaTeX file.
+	"""
 	if len(sys.argv) < 2:
-		print("usage: ./makeLabels.py <rebrick csv txt file>")
+		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
-	legoidFile = sys.argv[1]
-	if not os.path.isfile(legoidFile):
-		print("usage: ./makeLabels.py <rebrick csv txt file>")
+	setIDFile = sys.argv[1]
+	if not os.path.isfile(setIDFile):
+		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
 
-	legoIDs = []
-	with open(legoidFile, "r") as f:
-		line_count = 0
-		keys = None
-		set_info_tree = []
-		for line in f:
-			sline = line.strip()
-			line_count += 1
-			if line_count == 1:
-				keys = sline.split('\t')
-				print(keys)
-				continue
-			set_dict = {}
-			values = sline.split('\t')
-			for index, val in enumerate(values):
-				key = keys[index]
-				set_dict[key] = val
-			set_info_tree.append(set_dict)
-	set_info_tree = sorted(set_info_tree, key=lambda item: int(item['set_id'].split('-')[0]))
+	setIDs = libbrick.read_setIDs_from_file(setIDFile)
+	timestamp = libbrick.make_timestamp()
 
-	total_sets = len(set_info_tree)
+	BLW = bricklink_wrapper.BrickLink()
+	RBW = rebrick_wrapper.Rebrick()
+
+	set_data_tree = []
+	for setID in setIDs:
+		if not '-' in setID:
+			setID = str(setID) + "-1"
+		set_data = BLW.getSetData(setID)
+		rebrick_data = RBW.getSetData(setID)
+		set_data.update(rebrick_data)
+		extra_set_data = BLW.getSetDataDetails(setID)
+		set_data.update(extra_set_data)
+		set_data_tree.append(set_data)
+
+	set_data_tree = sorted(set_data_tree, key=lambda item: int(item['set_id'].split('-')[0]))
+
+	total_sets = len(set_data_tree)
 	print(f"Found {total_sets} Lego Sets to process")
 
-	filename_root = os.path.splitext(legoidFile)[0]
+	filename_root = os.path.splitext(setIDFile)[0]
 	outfile = f"labels-{filename_root}.tex"
 	pdffile = f"labels-{filename_root}.pdf"
 	with open(outfile, 'w') as f:
 		f.write(latex_header)
 		count = 0
 		total_pages = total_sets // 10 + 1
-		BLwrap = bricklink_wrapper.BrickLink()
-		for set_dict in set_info_tree:
+		for set_dict in set_data_tree:
 			count += 1
-			setID = set_dict['set_id']
+			setID = set_dict.get('set_id')
 			legoID = int(setID.split('-')[0])
-			price_dict = BLwrap.getSetPriceData(setID)
+			price_dict = BLW.getSetPriceData(setID)
 			label = makeLabel(set_dict, price_dict)
 			f.write(label)
 			if count % 2 == 0:
 				f.write(f'% page {count//10 + 1} of {total_pages} --- gap line --- count {count} of {total_sets} ---\n')
 		f.write(latex_footer)
-	BLwrap.close()
+	BLW.close()
 	print(f'mogrify -verbose -trim images/set_*.jpg; \nxelatex {outfile}; \nopen {pdffile}')
+	sys.stderr.write("\n")
 
+
+#============================
+#============================
 if __name__ == '__main__':
 	main()
-

@@ -9,7 +9,7 @@ import shutil # to save it locally
 import requests # to get image from the web
 import bricklink_wrapper
 
-latex_header = """
+latex_header = r"""
 \\documentclass[letterpaper]{article}% Avery 18260
 % https://www.avery.com/blank/labels/94200
 \\usepackage[top=0.5in, bottom=0.4in, left=0.28in, right=0.14in, noheadfoot]{geometry}
@@ -17,7 +17,7 @@ latex_header = """
 \\usepackage{graphicx}
 \\usepackage{xcolor}
 \\usepackage{fontspec}
-\\setsansfont[Ligatures=TeX]{Liberation Sans Narrow}
+\\setsansfont[Ligatures=TeX]{PT Sans Narrow}
 \definecolor{DarkBlue}{RGB}{0,0,100}
 
 \\newenvironment{legocell}[1]
