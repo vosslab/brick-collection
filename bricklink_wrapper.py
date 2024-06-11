@@ -24,6 +24,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		self.price_count = 0
 		self.image_checks = 0
 		self.image_url_checks = {}
+		self.status_counts = {'success': 0, 'timeout': 0, 'fail': 0}
 		self.data_caches = {
 			'bricklink_category_cache': 		'yml',
 			'bricklink_set_brick_weight_cache': 'yml',
@@ -45,7 +46,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	def _bricklink_get(self, url):
 		""" common function for all API calls """
 		#random sleep of 0-1 seconds to help server load
-		time.sleep(random.random())
+		time.sleep(random.random()+random.random())
 		status, headers, response = self.bricklink_api.get(url)
 		self.api_calls += 1
 		sys.stderr.write('#')
@@ -74,7 +75,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	def getColorList(self):
 		colors_data = self._bricklink_get('colors')
 		print("received data for {0} colors".format(len(colors_data)))
-		self.color_dict = {}
+		self.color_dict = {0: {}, }
 		for color_data in colors_data:
 			#import pprint
 			#pprint.pprint(color_data)
@@ -716,16 +717,34 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		self.image_checks += 1
 		if self.image_checks % 20 == 0:
 			self.save_cache("bricklink_element_id_map_cache")
+			print(self.status_counts)
 		time.sleep(random.random())
-		response = requests.get(url)
+		user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
+		headers = {
+			'User-Agent': user_agent,
+			'Accept': 'image/webp,*/*',
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Accept-Language': 'en-US,en;q=0.5',
+		}
+		try:
+			response = requests.get(url, timeout=2, headers=headers)
+		except requests.exceptions.ReadTimeout:
+			if verbose:
+				print("TIMEOUT")
+			self.status_counts['timeout'] += 1
+			return False
 		if response.status_code == 200:
 			if verbose:
 				print("success")
 			self.image_url_checks[url] = True
+			self.status_counts['success'] += 1
 			return True
 		else:
+			#print(response)
+			#print(response.status_code)
 			if verbose:
 				print("FAIL")
+			self.status_counts['fail'] += 1
 			self.image_url_checks[url] = False
 			return False
 
