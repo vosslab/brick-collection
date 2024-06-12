@@ -116,6 +116,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			parent_name = self.getCategoryName(category_data.get('parent_id'))
 			if not category_data['category_name'].startswith(parent_name):
 				category_name = parent_name + ' ' + category_data['category_name']
+				category_name = self.decode_and_normalize(category_name)
 				category_data['category_name'] = category_name
 			else:
 				category_name = category_data['category_name']
@@ -137,6 +138,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		setID = superset_ids[0]
 		set_data = self.getSetData(setID)
 		category_name = self.getCategoryName(set_data['category_id'])
+		category_name = self.decode_and_normalize(category_name)
 		print('MINIFIG {0} -- {1} -- from BrickLink website'.format(minifigID, category_name))
 		self.bricklink_minifig_category_cache[minifigID] = category_name
 		return category_name
@@ -174,10 +176,12 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 					set_data.get('no'), set_data.get('name'), set_data.get('year_released'),))
 			# update connected data
 			set_data['category_name'] = self.getCategoryName(set_data['category_id'])
+			set_data['name'] = self.decode_and_normalize(set_data['name'])
 			self.bricklink_set_cache[setID] = set_data
 			return set_data
 		###################
 		set_data = self._bricklink_get('items/set/{0}'.format(setID))
+		set_data['name'] = self.decode_and_normalize(set_data['name'])
 		###################
 		if verbose is True:
 			print('SET {0} -- {1} ({2}) -- from BrickLink website'.format(
@@ -621,6 +625,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if verbose is True:
 			print('MINIFIG {0} -- {1} ({2}) -- from BrickLink website'.format(
 				minifigID, minifig_data.get('name')[:60], minifig_data.get('year_released'),))
+		minifig_data['name'] = self.decode_and_normalize(minifig_data['name'])
 		self.bricklink_minifig_cache[str(minifigID)] = minifig_data
 		return minifig_data
 
@@ -642,6 +647,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if verbose is True:
 			print('PART {0} -- {1} ({2}) -- from BrickLink website'.format(
 				partID, part_data.get('name'),part_data.get('year_released'),))
+		part_data['name'] = self.decode_and_normalize(part_data['name'])
 		self.bricklink_part_cache[partID] = part_data
 		return part_data
 

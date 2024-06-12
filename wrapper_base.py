@@ -1,9 +1,11 @@
 import os
 import sys
+import html
 import json
 import time
 import yaml
 import random
+import unicodedata
 
 class BaseWrapperClass(object):
 	"""
@@ -208,3 +210,22 @@ class BaseWrapperClass(object):
 			return False
 		###################
 		return True
+
+	def decode_and_normalize(self, html_string: str) -> str:
+		"""
+		Decodes HTML escape sequences in the input string to UTF-8 and normalizes it to ISO-8859-1.
+
+		Args:
+			bricklink_string (str): String containing HTML escape sequences.
+
+		Returns:
+			str: Normalized string in ISO-8859-1 encoding.
+		"""
+		# Decode HTML entities to UTF-8
+		decoded_string = html.unescape(html_string)
+
+		# Normalize to ISO-8859-1
+		normalized_string = unicodedata.normalize('NFKD', decoded_string).encode('ISO-8859-1', 'ignore').decode('ISO-8859-1')
+
+		return normalized_string
+

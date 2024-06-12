@@ -7,6 +7,8 @@ import time
 import random
 import shutil  # to save it locally
 import requests  # to get image from the web
+
+import libbrick
 import bricklink_wrapper
 
 latex_header = r"""
@@ -79,32 +81,6 @@ def downloadImage(image_url, filename=None):
 	return filename
 
 #============================
-#============================
-#!/usr/bin/env python3
-
-# Standard Library
-import os
-import re
-import sys
-import time
-import random
-
-#============================
-
-def downloadImage(image_url: str, filename: str) -> None:
-	"""
-	Downloads an image from a given URL and saves it to the specified filename.
-
-	Args:
-		image_url (str): URL of the image to be downloaded.
-		filename (str): Path where the image will be saved.
-	"""
-	# Dummy implementation for placeholder
-	print(f"Downloading image from {image_url} to {filename}")
-	time.sleep(random.random())
-
-#============================
-
 def makeLabel(minifig_dict: dict, price_dict: dict) -> str:
 	"""
 	Generates a LaTeX string for a given minifigure and its price details.
@@ -128,7 +104,6 @@ def makeLabel(minifig_dict: dict, price_dict: dict) -> str:
 	latex_str = create_latex_string(minifig_id, set_num, minifig_dict, filename, name_fontsize, minifig_name, time_str, price_dict)
 	print(f'{minifig_id} -- {set_num} ({minifig_dict.get("year_released")}) -- {minifig_dict.get("name")[:60]}')
 	return latex_str
-
 #============================
 
 def get_set_num(minifig_dict: dict) -> str:
@@ -251,9 +226,9 @@ def create_latex_string(minifig_id: str, set_num: str, minifig_dict: dict, filen
 	latex_str += '} {\\sffamily\\tiny ' + time_str + '}\\par \n'
 	latex_str += '\\vspace{-1pt} '
 	if set_num is not None and len(set_num) > 3:
-		latex_str += '{\\tiny \\> from set \\textbf{ ' + str(set_num) + ' } \\footnotesize (' + minifig_dict.get('year_released') + ')}\\par \n'
+		latex_str += '{\\tiny \\> from set \\textbf{ ' + str(set_num) + ' } \\footnotesize (' + str(minifig_dict.get('year_released')) + ')}\\par \n'
 	else:
-		latex_str += '{\\footnotesize \\> release year: ' + minifig_dict.get('year_released') + '}\\par \n'
+		latex_str += '{\\footnotesize \\> release year: ' + str(minifig_dict.get('year_released')) + '}\\par \n'
 	latex_str += '{\\sffamily' + name_fontsize + ' ' + name + '}\\par \n'
 	latex_str += format_sales_info(price_dict)
 	latex_str += format_list_info(price_dict)
@@ -279,11 +254,11 @@ def format_sales_info(price_dict: dict) -> str:
 		used_sale_qty = int(price_dict['used_sale_qty'])
 		latex_str = '\\vspace{-3pt} {\\sffamily\\tiny sale: '
 		if new_median_sale_price > 0 and used_median_sale_price > 0:
-			latex_str += f'\${new_median_sale_price/100:.2f} new ({new_sale_qty}) / \${used_median_sale_price/100:.2f} used ({used_sale_qty})'
+			latex_str += fr'\${new_median_sale_price/100:.2f} new ({new_sale_qty}) / \${used_median_sale_price/100:.2f} used ({used_sale_qty})'
 		elif new_sale_qty > 0 and new_median_sale_price > 0:
-			latex_str += f'\${new_median_sale_price/100:.2f} new ({new_sale_qty})'
+			latex_str += fr'\${new_median_sale_price/100:.2f} new ({new_sale_qty})'
 		elif used_sale_qty > 0 and used_median_sale_price > 0:
-			latex_str += f'\${used_median_sale_price/100:.2f} used ({used_sale_qty})'
+			latex_str += fr'\${used_median_sale_price/100:.2f} used ({used_sale_qty})'
 		latex_str += '}\\\\\n'
 		return latex_str
 	return ''
@@ -307,11 +282,11 @@ def format_list_info(price_dict: dict) -> str:
 		used_list_qty = int(price_dict['used_list_qty'])
 		latex_str = '\\vspace{-3pt} {\\sffamily\\tiny list: '
 		if new_median_list_price > 0 and used_median_list_price > 0:
-			latex_str += f'\${new_median_list_price/100:.2f} new ({new_list_qty}) / \${used_median_list_price/100:.2f} used ({used_list_qty})'
+			latex_str += fr'\${new_median_list_price/100:.2f} new ({new_list_qty}) / \${used_median_list_price/100:.2f} used ({used_list_qty})'
 		elif new_list_qty > 0 and new_median_list_price > 0:
-			latex_str += f'\${new_median_list_price/100:.2f} new ({new_list_qty})'
+			latex_str += fr'\${new_median_list_price/100:.2f} new ({new_list_qty})'
 		elif used_list_qty > 0 and used_median_list_price > 0:
-			latex_str += f'\${used_median_list_price/100:.2f} used ({used_list_qty})'
+			latex_str += fr'\${used_median_list_price/100:.2f} used ({used_list_qty})'
 		latex_str += '}\\\\\n'
 		return latex_str
 	return ''
@@ -337,9 +312,6 @@ def main() -> None:
 
 	# Read minifigure ID pairs from the input file
 	minifigIDpairs = libbrick.read_minifigIDpairs_from_file(minifigIDFile)
-
-	# Generate a timestamp for the output file
-	timestamp = libbrick.make_timestamp()
 
 	# Initialize the BrickLink wrapper
 	BLW = bricklink_wrapper.BrickLink()
@@ -391,7 +363,7 @@ def main() -> None:
 			BLW.save_cache()
 
 	# Sort the minifigures by set ID
-	minifig_info_tree = sorted(minifig_info_tree, key=lambda item: int(item.get('minifig_id')))
+	minifig_info_tree = sorted(minifig_info_tree, key=lambda item: item.get('minifig_id'))
 
 	total_minifigs = len(minifig_info_tree)
 	print(f"Found {total_minifigs} Minifigs to process")
