@@ -61,10 +61,10 @@ def read_setIDs_from_file(setIDFile, remove_dups=False):
 			sline = bits[0].strip()
 		if sline.startswith('#'):
 			continue
-		elif re.search('^[0-9]+$', sline):
+		elif re.search(r'^[0-9]+$', sline):
 			legoID = int(sline)
 			setID = '{0}-1'.format(legoID)
-		elif re.search('^[0-9]+\-[0-9]+$', sline):
+		elif re.search(r'^[0-9]+\-[0-9]+$', sline):
 			setID = sline
 		else:
 			print("??? - '{0}'".format(sline))
@@ -95,9 +95,9 @@ def processSetID(setID):
 		return None
 	if ' ' in setID:
 		return None
-	if re.search('^[A-Za-z]+$', setID):
+	if re.search(r'^[A-Za-z]+$', setID):
 		return None
-	if re.search('^[0-9]{4,5}-[0-9]+$', setID):
+	if re.search(r'^[0-9]{4,5}-[0-9]+$', setID):
 		#perfect
 		return setID
 	if re.search('^[0-9]{4,5}$', setID):
@@ -112,42 +112,58 @@ def processSetID(setID):
 
 #============================
 #============================
-def read_minifigIDpairs_from_file(minifigIDFile, remove_dups=False):
+def read_minifigIDpairs_from_file(minifigIDFile: str, remove_dups: bool = False) -> list:
+	"""
+	Reads minifigure ID pairs from a file, with optional duplicate removal.
+
+	Args:
+		minifigIDFile (str): The file containing minifigure IDs.
+		remove_dups (bool): Flag to indicate whether duplicates should be removed.
+
+	Returns:
+		list[tuple[str, str]]: List of minifigure ID and set ID pairs.
+	"""
 	if not os.path.isfile(minifigIDFile):
 		return None
-	minifigIDs = []
-	f = open(minifigIDFile, "r")
-	for line in f:
-		sline = line.strip()
-		if len(sline) < 2:
-			continue
-		if sline.startswith('#'):
-			continue
 
-		minifigID = None
-		setID = None
-		if '\t' in sline:
-			bits = sline.split('\t')
+	minifigIDs = []
+	pattern = r'^[a-zA-Z]{2,}[0-9]{2,4}(?:[a-zA-Z]+)?[0-9]*$'
+
+	with open(minifigIDFile, "r") as f:
+		for line in f:
+			sline = line.strip()
+			if len(sline) < 2 or sline.startswith('#'):
+				continue
+
+			if '\t' in sline:
+				bits = sline.split('\t')
+			elif ',' in sline:
+				bits = sline.split(',')
+			else:
+				bits = [sline, None]
+
 			minifigID = bits[0].strip()
-			setID = bits[1].strip()
-		elif ',' in sline:
-			bits = sline.split(',')
-			minifigID = bits[0].strip()
-			setID = bits[1].strip()
-		else:
-			minifigID = sline
-			setID = None
-		if not re.search('^[a-z0-9]+[0-9]{3,}[a-z]?[0-9]?$', minifigID):
-			print("?minifigID?? - '{0}'".format(minifigID))
-			time.sleep(2)
-			continue
-		setID = processSetID(setID)
-		pair = (minifigID, setID)
-		minifigIDs.append(pair)
-	f.close()
+			setID = bits[1].strip() if bits[1] else None
+
+			if not re.search(pattern, minifigID):
+				print(f"?minifigID?? - '{minifigID}'")
+				time.sleep(2)
+				continue
+
+			setID = processSetID(setID)
+			minifigIDs.append((minifigID, setID))
+
+	if remove_dups:
+		minifigIDs = list(set(minifigIDs))
+
+	minifigIDs.sort()
+	print(f"Found {len(minifigIDs)} minifig ID pairs to process")
+	return minifigIDs
+
 	### remove duplicates
 	if remove_dups is True:
-		minifigIDs = list(set(setIDs))
+		minifigIDs = list(set(minifigIDs))
+
 	minifigIDs.sort()
 	print("Found {0} minifig ID pairs to process".format(len(minifigIDs)))
 	return minifigIDs

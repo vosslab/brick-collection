@@ -198,7 +198,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		###################
 		if set_id_list is not None and len(set_id_list) > 0:
 			if verbose is True:
-				print('SUPERSET MINFIG {0} -- found {1} sets -- from cache'.format(
+				print('SUPERSET MINIFIG {0} -- found {1} sets -- from cache'.format(
 					minifigID, len(set_id_list), ))
 			# update connected data
 			return set_id_list
@@ -620,12 +620,12 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			return minifig_data
 		###################
 		minifig_data = self._bricklink_get('items/minifig/{0}'.format(minifigID))
+		minifig_data['name'] = self.decode_and_normalize(minifig_data['name'])
 		###################
 		#print(minifig_data)
 		if verbose is True:
 			print('MINIFIG {0} -- {1} ({2}) -- from BrickLink website'.format(
 				minifigID, minifig_data.get('name')[:60], minifig_data.get('year_released'),))
-		minifig_data['name'] = self.decode_and_normalize(minifig_data['name'])
 		self.bricklink_minifig_cache[str(minifigID)] = minifig_data
 		return minifig_data
 
