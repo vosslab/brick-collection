@@ -25,19 +25,26 @@ def getAllData(setID, rbw, bsw, blw):
 	#print(data)
 
 	data = libbrick.flatten_dict(data)
-	if data.get('msrp') is not None:
-		data['$pP-retail'] = round(data.get('msrp',0)/data.get('num_parts',1),1)
+	numparts = data.get('num_parts',1)
+	if numparts <= 0:
+		numparts = 1
+	if data.get('msrp') is not None and data.get('msrp') > 0:
+		data['$pP-retail'] = round(data.get('msrp',0)/numparts,1)
 		data['growth-used'] = round(data['used_median_sale_price']/data['msrp'],1)
 		data['growth-new'] = round(data['new_median_sale_price']/data['msrp'],1)
-	data['$pP-used'] = round(data['used_median_sale_price']/data['num_parts'],1)
-	data['$pP-new'] = round(data['new_median_sale_price']/data['num_parts'],1)
+	else:
+		data['$pP-retail'] = 0
+		data['growth-used'] = 1
+		data['growth-new'] = 1
+	data['$pP-used'] = round(data['used_median_sale_price']/numparts,1)
+	data['$pP-new'] = round(data['new_median_sale_price']/numparts,1)
 
 
 	if data['$pP-used'] > 10 and data['growth-used'] > 1.5:
 		data['flag'] = "KEEP"
 	elif data['year'] >= 2019:
 		data['flag'] = "wait"
-	elif 0 < data['$pP-used'] < 10 and data['growth-used'] < 1.0:
+	elif 0 < data['$pP-used'] < 10 and data.get('growth-used',1) < 1.0:
 		data['flag'] = "PARTOUT"
 	else:
 		data['flag'] = "??"
