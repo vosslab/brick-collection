@@ -3,119 +3,135 @@
 import os
 import sys
 
-# Get the directory name of the current script
+# Add parent directory to sys.path for importing custom modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# Get the parent directory
 parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
-# Add the parent directory to sys.path
 sys.path.append(parent_dir)
-# Now you can import the module
+
+# Import custom module from parent directory
+import libbrick
 import bricklink_wrapper
 
 def ask_yes_no(question, default="no"):
+    """Prompt a yes/no question to the user with a default answer."""
     while True:
         answer = input(f"{question} (y/n) [default: {default}]: ").strip().lower()
-        if len(answer) == 0:
+        if not answer:
             return default == "yes"
-        answer = answer[0]
-        if answer in ["y", "n"]:
-            return answer == "y"
+        if answer[0] in ["y", "n"]:
+            return answer[0] == "y"
         print("Please enter 'y' or 'n'.")
-        sys.exit(1)
 
-stages_of_build = [
-    'completely disassembled',
-    'mostly disassembled',
-    'half-built',
-    'partially assembled',
-    'almost fully constructed',
-]
+def get_percent_complete():
+    """Prompt the user to enter the percent complete of the set."""
+    return int(input("Percent complete (e.g., 95): ").strip())
 
-included_or_not = {
-    'minifigs': None,
-    'instructions': None,
-    'box': None,
-    'extra pieces': None,
-    'minifigs': None,
-}
-
-def main():
-    # Generating description
-    description = []
-
-    # 1. Percent complete
-    percent_complete = int(input("Percent complete (e.g., 95): ").strip())
-    # 5. Has extra pieces (if percent complete > 99)
-    if percent_complete < 99:
-        included_or_not['extra pieces'] = False
-
+def get_included_items(included_or_not):
+    """Prompt the user to confirm if specific items are included."""
     for key in included_or_not.keys():
         if included_or_not[key] is not None:
             continue
-        result = ask_yes_no(f"does set have {key}", default="no")
-        included_or_not[key] = result
+        included_or_not[key] = ask_yes_no(f"Does set have {key}?", default="no")
+    return included_or_not
 
-    # 6. Personal collection, bought by you
-    personal_collection = ask_yes_no("Personal collection, bought by you")
-    # Personal collection
-    if personal_collection:
-        description.append("📦 From personal collection, bought by me")
+def get_personal_collection():
+    """Prompt the user to confirm if the set is from a personal collection."""
+    return ask_yes_no("Personal collection, bought by you")
 
-    # Create a dictionary for quick lookup
+def get_build_status(stages_of_build):
+    """Prompt the user to select the build status from a list."""
     build_status_dict = {status[0]: status for status in stages_of_build}
+    input_prompt = "Build status:\n" + "".join(
+        [f"\t({key}){value}\n" for key, value in build_status_dict.items()]
+    ) + "Please select: "
+    build_status_input = input(input_prompt).strip().lower()
+    return build_status_dict.get(build_status_input, 'Unknown')
 
-    # Generate the input prompt dynamically
-    input_prompt = "Build status "
-    for key, value in build_status_dict.items():
-        input_prompt += f"\n\t({key}){value[1:]}, "
+def generate_description(included_or_not, percent_complete, build_status, personal_collection):
+    """Generate the final description based on the provided details."""
+    description = []
 
-    # Remove the trailing comma and space
-    input_prompt = input_prompt.rstrip(", ") + ": "
-
-    # User prompt for build status
-    build_status_input = input(input_prompt).strip().lower()[0]
-
-    # Get the corresponding status from the dictionary
-    build_status = build_status_dict.get(build_status_input, 'Unknown')
-
-    # Output the selected build status
-    print(f"Selected build status: {build_status}")
-
-    # Build status
     if build_status != 'Unknown':
         description.append(f"{build_status} and stored in plastic bag")
     else:
-        description.append(f"stored in plastic bag")
+        description.append("stored in plastic bag")
 
-    # Percent complete
     if percent_complete < 100:
-        percent_description = f"Visual check shows {percent_complete}% complete"
+        percent_description = f"Visual inspection {percent_complete}% complete"
         if percent_complete < 99:
             percent_description += " and priced accordingly"
         description.append(percent_description)
     else:
         description.append(f'{percent_complete}% complete')
 
-    #positives
-    positive_text = ''
-    positive_text += "✅ "
+    if personal_collection:
+        description.append("📦 From personal collection, bought by me")
+
+    if included_or_not['minifigs'] == 'none':
+        description.append("set has no minifigs")
+
+    # Generate list of included items
+    positive_text = "✅ "
     for key, value in included_or_not.items():
         if value is True:
             positive_text += f"includes {key}; "
-    positive_text = positive_text[:-2]
-    description.append(positive_text)
+    if len(positive_text) > 2:
+        positive_text = positive_text[:-2]  # Remove trailing semicolon and space
+        description.append(positive_text)
 
-    #negatives
-    negative_text = ''
-    negative_text += "❌ "
+    # Generate list of excluded items
+    negative_text = "❌ "
     for key, value in included_or_not.items():
         if value is False:
             negative_text += f"no {key}; "
-    negative_text = negative_text[:-2]
-    description.append(negative_text)
+    if len(negative_text) > 2:
+        negative_text = negative_text[:-2]  # Remove trailing semicolon and space
+        description.append(negative_text)
 
-    # Output the generated description
-    final_description = "; ".join(description)
+    return "; ".join(description)
+
+def main():
+    stages_of_build = [
+        'completely disassembled',
+        'mostly disassembled',
+        'half-built',
+        'partially assembled',
+        'almost fully constructed',
+    ]
+
+    included_or_not = {
+        'minifigs': None,
+        'instructions': None,
+        'box': None,
+        'extra pieces': None,
+    }
+
+    # Gather information
+    setID = libbrick.user_input_set_id()
+    print(f"Set ID: {setID}")
+    BLW = bricklink_wrapper.BrickLink()
+
+
+    print("")
+    percent_complete = get_percent_complete()
+    if percent_complete < 99:
+        included_or_not['extra pieces'] = False
+    print("")
+    minifigs = BLW.getMinifigIDsFromSet(setID)
+    minifig_count = len(minifigs)
+    if minifig_count == 0:
+        included_or_not['minifigs'] = 'none'
+    print("")
+    included_or_not = get_included_items(included_or_not)
+    print("")
+    personal_collection = get_personal_collection()
+    print("")
+    build_status = get_build_status(stages_of_build)
+
+    # Generate and output the description
+    final_description = generate_description(
+        included_or_not, percent_complete, build_status, personal_collection
+    )
     print("\nGenerated Description:")
     print(final_description)
 
