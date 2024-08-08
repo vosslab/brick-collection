@@ -83,6 +83,7 @@ if __name__ == '__main__':
 	allkeys = []
 	line = 0
 	for itemID in setIDs:
+		print(f"--- itemID: {itemID}")
 		line += 1
 		sys.stderr.write(".")
 		data = getAllData(itemID, rbw, bsw, blw)
