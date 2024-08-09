@@ -147,7 +147,7 @@ class BaseWrapperClass(object):
 			raise KeyError
 		elif legoID > 99999:
 			print("Error: Lego set ID is too big: {0}".format(legoID))
-			raise KeyError
+			#raise KeyError
 		return True
 
 	#============================

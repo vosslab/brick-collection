@@ -72,7 +72,10 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 			return set_data
 		###################
 		time.sleep(random.random())
-		response = rebrick.lego.get_set(setID)
+		try:
+			response = rebrick.lego.get_set(setID)
+		except:
+			return None
 		sys.stderr.write('#')
 		self.api_calls += 1
 		set_data = json.loads(response.read())
