@@ -289,7 +289,7 @@ def read_minifigIDpairs_from_file(minifigIDFile: str, remove_dups: bool = False)
 		return None
 
 	minifigIDs = []
-	pattern = r'^[a-zA-Z]{2,}[0-9]{2,4}(?:[a-zA-Z]+)?[0-9]*$'
+	pattern = r'^[a-zA-Z0-9]{2,}[0-9]{2,4}(?:[a-zA-Z]+)?[0-9]*$'
 
 	with open(minifigIDFile, "r") as f:
 		for line in f:
