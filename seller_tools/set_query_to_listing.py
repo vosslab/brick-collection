@@ -90,6 +90,13 @@ def generate_description(included_or_not, percent_complete, build_status, person
 
     return "; ".join(description)
 
+def listing_to_stdout(listing_dict):
+    print("")
+    import pprint
+    pprint.pprint(listing_dict)
+    print(listing_dict.keys())
+    return
+
 def main():
     stages_of_build = [
         'completely disassembled',
@@ -111,6 +118,15 @@ def main():
     print(f"Set ID: {setID}")
     BLW = bricklink_wrapper.BrickLink()
 
+    sold_data = BLW.getSetPriceDetails(setID, guide_type='sold', new_or_used='U')
+    #listing_to_stdout(sold_data)
+    #print(sold_data['item'])
+    for i in sold_data['price_detail']:
+        listing_to_stdout(i)
+
+    stock_data = BLW.getSetPriceDetails(setID, guide_type='stock', new_or_used='U')
+    for i in stock_data['price_detail']:
+        listing_to_stdout(i)
 
     print("")
     percent_complete = get_percent_complete()
