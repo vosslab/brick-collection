@@ -11,6 +11,7 @@ import statistics
 import wrapper_base
 import bricklink.api
 
+
 #https://www.bricklink.com/v3/api.page
 
 class BrickLink(wrapper_base.BaseWrapperClass):

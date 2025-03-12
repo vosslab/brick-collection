@@ -175,7 +175,7 @@ def main():
 		for part_dict in parts_tree:
 			count += 1
 			if count % 10 == 0:
-				print(f"\nItem {count} of {len(parts_tree)}")
+				print(f"\n   PART {count} of {len(parts_tree)}")
 			data = collect_data_for_part(part_dict, BLW, args)
 
 			# Setting the columns order and writing headers
