@@ -1,6 +1,5 @@
-python-bricklink-api
 brickse
-#libbrick  # This might need to be updated with the correct package name
+python-bricklink-api
+pyyaml
 rebrick
 requests
-pyyaml
