@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import time
 import yaml
@@ -13,8 +14,23 @@ class Rebrick(wrapper_base.BaseWrapperClass):
 	#============================
 	def __init__(self):
 		self.debug = True
+		key_file_name = 'rebrick_api_key.yml'
+		local_key_path = os.path.join(os.path.dirname(__file__), key_file_name)
+		api_dict = None  # Ensure it's defined
+		# Check in the current working directory
+		if os.path.exists(key_file_name):
+			with open(key_file_name, 'r') as f:
+				api_dict = yaml.safe_load(f)
+		# Check in the script's directory
+		elif os.path.exists(local_key_path):
+			with open(local_key_path, 'r') as f:
+				api_dict = yaml.safe_load(f)
+		# If no valid file was found, exit with an error
+		if api_dict is None:
+			print("Error: API key file not found.")
+			exit(1)
 
-		api_dict = yaml.safe_load(open('rebrick_api_key.yml', 'r'))
+		# Extract the API key
 		api_key = api_dict['api_key']
 		rebrick.init(api_key)
 		#Usage: init(API_KEY) or init(API_KEY, USER_TOKEN) or init(API_KEY, username, password)

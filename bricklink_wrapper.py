@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import math
 import time
@@ -19,7 +20,21 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	def __init__(self):
 		self.debug = True
-		self.api_data = yaml.safe_load(open('bricklink_api_private.yml', 'r'))
+		key_file_name = 'bricklink_api_private.yml'
+		local_key_path = os.path.join(os.path.dirname(__file__), key_file_name)
+		self.api_data = None  # Ensure it's defined
+		# Check in the current working directory
+		if os.path.exists(key_file_name):
+			with open(key_file_name, 'r') as f:
+				self.api_data = yaml.safe_load(f)
+		# Check in the script's directory
+		elif os.path.exists(local_key_path):
+			with open(local_key_path, 'r') as f:
+				self.api_data = yaml.safe_load(f)
+		# If no valid file was found, exit with an error
+		if self.api_data is None:
+			print("Error: API key file not found.")
+			exit(1)
 		self.bricklink_api = bricklink.api.BrickLinkAPI(
 		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
 		  self.api_data['token_value'], self.api_data['token_secret'])
