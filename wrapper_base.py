@@ -60,10 +60,13 @@ class BaseWrapperClass(object):
 		Load cache data from files.
 		"""
 		print('==== LOAD CACHE ====')
+		cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
 		for cache_name, cache_format in self.data_caches.items():
 			if cache_format == 'yaml':
 				cache_format = 'yml'
-			file_name = 'CACHE/' + cache_name + '.' + cache_format
+
+			file_basename = cache_name + '.' + cache_format
+			file_name = os.path.join(cache_path, file_basename)
 			if os.path.isfile(file_name):
 				try:
 					t0 = time.time()
