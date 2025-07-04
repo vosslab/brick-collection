@@ -76,7 +76,6 @@ import lxml.etree
 #==============
 
 
-#==============
 def xml_to_csv(xml_file: str, csv_file: str) -> None:
 	"""
 	Convert BrickLink Inventory XML to CSV.
@@ -98,17 +97,30 @@ def xml_to_csv(xml_file: str, csv_file: str) -> None:
 
 	field_list = sorted(field_names)
 
+	count = 0
+	type_counts = {}
+
 	with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
 		writer = csv.writer(csvfile)
 		writer.writerow(field_list)
 
 		for item in root.findall('ITEM'):
 			row = []
+			item_type = 'UNKNOWN'
 			for field in field_list:
 				element = item.find(field)
-				row.append(element.text if element is not None else '')
+				text = element.text if element is not None else ''
+				row.append(text)
+				if field.upper() == 'ITEMTYPE' and text.strip():
+					item_type = text.strip().upper()
 			writer.writerow(row)
+			count += 1
+			type_counts[item_type] = type_counts.get(item_type, 0) + 1
 
+	print(f"Processed {count} items.")
+	print("Type breakdown:")
+	for t, c in type_counts.items():
+		print(f"  {t}: {c}")
 	print(f"XML → CSV conversion complete: {csv_file}")
 
 
@@ -126,6 +138,9 @@ def csv_to_xml(csv_file: str, xml_file: str, bltype: str) -> None:
 		None
 	"""
 	root = lxml.etree.Element('INVENTORY')
+
+	count = 0
+	type_counts = {}
 
 	with open(csv_file, newline='', encoding='utf-8') as csvfile:
 		reader = csv.DictReader(csvfile)
@@ -145,19 +160,29 @@ def csv_to_xml(csv_file: str, xml_file: str, bltype: str) -> None:
 				print(f"Warning: LOTID found in upload mode; skipping LOTID for row: {row}")
 
 			item = lxml.etree.SubElement(root, 'ITEM')
+			item_type = 'UNKNOWN'
+
 			for field, value in row.items():
 				field_upper = field.upper()
 				if bltype == 'upload' and field_upper == 'LOTID':
 					continue
 				if value.strip():
 					lxml.etree.SubElement(item, field_upper).text = value.strip()
-			time.sleep(random.random())
+					if field_upper == 'ITEMTYPE':
+						item_type = value.strip().upper()
+
+			count += 1
+			type_counts[item_type] = type_counts.get(item_type, 0) + 1
+			#time.sleep(random.random())
 
 	tree = lxml.etree.ElementTree(root)
 	tree.write(xml_file, encoding='utf-8', pretty_print=True, xml_declaration=True)
 
+	print(f"Processed {count} items.")
+	print("Type breakdown:")
+	for t, c in type_counts.items():
+		print(f"  {t}: {c}")
 	print(f"CSV → XML conversion complete: {xml_file}")
-
 
 #==============
 def determine_mode(input_file: str) -> str:
