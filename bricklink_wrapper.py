@@ -9,6 +9,9 @@ import random
 import requests
 import statistics
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 import wrapper_base
 import bricklink.api
 
@@ -754,7 +757,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'Accept-Language': 'en-US,en;q=0.5',
 		}
 		try:
-			response = requests.get(url, timeout=2, headers=headers)
+			response = requests.get(url, timeout=2, headers=headers, verify=False)
 		except requests.exceptions.ReadTimeout:
 			if verbose:
 				print("TIMEOUT")
