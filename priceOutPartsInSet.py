@@ -62,6 +62,13 @@ def collect_data_for_part(part_dict, BLW, args):
 		data['element id'] = BLW.partIDandColorIDtoElementID(partID, colorID)
 		extra_part_data = BLW.getPartData(partID)
 
+		# partIDandColorIDtoElementID already picks an element ID with a valid image
+		element_id = data.get('element id')
+		data['element_image_url'] = (
+			f"https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{element_id}.jpg"
+			if element_id is not None else ''
+		)
+
 		if args.debug:
 			print(price_data)
 
@@ -172,11 +179,19 @@ def main():
 		writer = csv.writer(file, delimiter='\t')
 		allkeys = None
 		count = 0
+		total_parts = len(parts_tree)
 		for part_dict in parts_tree:
 			count += 1
-			if count % 10 == 0:
-				print(f"\n   PART {count} of {len(parts_tree)}")
+			remaining = total_parts - count
+			print(f"\n   PART {count} of {total_parts} ({remaining} remaining)")
 			data = collect_data_for_part(part_dict, BLW, args)
+
+			# Remove unused/legacy fields we no longer want to export
+			data.pop('image_url', None)
+			data.pop('thumbnail_url', None)
+			for key in list(data.keys()):
+				if key.startswith('used_'):
+					data.pop(key, None)
 
 			# Setting the columns order and writing headers
 			if allkeys is None:
