@@ -17,3 +17,4 @@
 - Update docs for output/cache locations and expand `pip_requirements.txt`.
 - Add Brewfile for LaTeX tooling and replace ImageMagick trim with Pillow.
 - Add setup snippet for `brew bundle` and `pip3 install -r pip_requirements.txt`.
+- Add `docs/INSTALL.md` with API key setup details.

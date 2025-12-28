@@ -3,6 +3,9 @@
 ## Output directory
 - Scripts write output files to `output/` by default.
 
+## Setup
+- See [docs/INSTALL.md](docs/INSTALL.md) for API keys and installation steps.
+
 ## macOS setup
 - Install tools and Python deps:
 ```bash
