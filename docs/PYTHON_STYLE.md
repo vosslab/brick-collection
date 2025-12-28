@@ -6,6 +6,12 @@ Language Model guide to Neil python3 programming
 
 * I like using one of the latest versions of python, but not the latest, of python3, currently **3.12**.
 
+## FILENAMES
+* Prefer snake_case for Python filenames and module names.
+* Avoid CamelCase in filenames. Reserve CamelCase for class names.
+* Keep filenames descriptive, and consistent with the primary thing the file provides.
+* Use only lowercase letters, numbers, and underscores in filenames.
+
 ## USE TABS
 
 * Always use tabs for indentation in python3 code, never spaces!
@@ -257,6 +263,7 @@ pyexiftool  # Python wrapper for exiftool metadata extraction and editing
 pyflakes  # Static analysis to find unused imports and simple errors
 pygame  # SDL based multimedia and simple game framework
 pytesseract  # Python wrapper for Tesseract OCR
+pytest
 python-bricklink-api  # BrickLink API client for LEGO parts and orders
 pyyaml  # YAML parsing and serialization
 qrcode  # QR code generation

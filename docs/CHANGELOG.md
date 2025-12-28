@@ -9,3 +9,8 @@
 - Add `libbrick/msrp_loader.py` and `libbrick/path_utils.py` for shared cache loading and git root resolution.
 - Move legacy label scripts into `legacy/`.
 - Add pytest coverage for cache helpers and label rendering, and clean up pyflakes issues.
+- Default script outputs now go to `output/` to keep the repo root clean.
+- Rename Python scripts to snake_case filenames for consistency.
+- Add pytest conftest to ensure repo imports resolve in tests.
+- Add `libbrick/minifig_sets.py` helper and split `find_set_for_minifig.py` into a thin CLI.
+- Add `docs/USAGE.md` with updated snake_case script names.

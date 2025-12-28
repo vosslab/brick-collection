@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import os
 import csv
 import argparse
+
+import libbrick.path_utils
 
 def read_csv(input_file):
 	"""Read set IDs from a CSV file."""
@@ -38,7 +41,9 @@ def main():
 	# Determine output file name
 	output_file = args.output_file
 	if not output_file:
-		output_file = args.input_file.replace('.csv', '.xml')
+		output_dir = libbrick.path_utils.get_output_dir()
+		base_name = os.path.splitext(os.path.basename(args.input_file))[0]
+		output_file = os.path.join(output_dir, base_name + '.xml')
 	
 	# Write set IDs to XML
 	write_xml(set_ids, output_file)

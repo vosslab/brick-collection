@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+import os
 import csv
 import re
 import time
-import libbrick.wrappers.bricklink_wrapper as BLW
 import math
+
+import libbrick.path_utils
+import libbrick.wrappers.bricklink_wrapper as BLW
 
 # Define the bag sizes in mL
 bag_sizes = {
@@ -25,6 +28,9 @@ def convert_bag_size_to_ml(bag_size):
 # Initialize the BrickLink wrapper
 blw = BLW.BrickLink()
 
+output_dir = libbrick.path_utils.get_output_dir()
+output_file_path = os.path.join(output_dir, 'citizen_brick_output.csv')
+
 # Read the CSV file
 with open('Citizen_Brick/Citizen_Brick_Draft-Minimal.csv', newline='', encoding='utf-8') as input_file:
     reader = csv.reader(input_file)
@@ -32,7 +38,7 @@ with open('Citizen_Brick/Citizen_Brick_Draft-Minimal.csv', newline='', encoding=
     header = [re.sub(r'\s', '', field) for field in header] # Remove all whitespace characters
 
     # Prepare to write to a new CSV file
-    with open('Citizen_Brick/output.csv', 'w', newline='', encoding='utf-8') as output_file:
+    with open(output_file_path, 'w', newline='', encoding='utf-8') as output_file:
         writer = csv.writer(output_file)
 
         # Write header

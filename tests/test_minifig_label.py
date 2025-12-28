@@ -1,4 +1,4 @@
-import superMakeMinifigLabels
+import super_make_minifig_labels
 
 #============================
 #============================
@@ -9,7 +9,7 @@ def test_create_latex_string_contains_fields():
 	minifig_dict = {
 		'year_released': 2020,
 	}
-	result = superMakeMinifigLabels.create_latex_string(
+	result = super_make_minifig_labels.create_latex_string(
 		'fig1',
 		minifig_dict,
 		'images/processed/minifig_fig1.png',

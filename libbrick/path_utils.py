@@ -20,3 +20,18 @@ def get_git_root(path: str = None) -> str:
 	except subprocess.CalledProcessError:
 		# Not inside a git repository
 		return None
+
+#============================
+
+def get_output_dir(path: str = None, create: bool = True) -> str:
+	"""
+	Return the output directory path, creating it if requested.
+	"""
+	if path is None:
+		path = os.getcwd()
+	git_root = get_git_root(path)
+	base_dir = git_root if git_root is not None else path
+	output_dir = os.path.join(base_dir, 'output')
+	if create and not os.path.isdir(output_dir):
+		os.mkdir(output_dir)
+	return output_dir

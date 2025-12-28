@@ -1,5 +1,5 @@
 import libbrick.image_cache
-import superMakeSetLabels
+import super_make_set_labels
 
 #============================
 #============================
@@ -23,7 +23,7 @@ def test_make_label_includes_msrp(monkeypatch):
 		'set_img_url': 'https://example.com/x.jpg',
 	}
 	msrp_cache = {'123-1': 4999}
-	result = superMakeSetLabels.makeLabel(set_dict, msrp_cache)
+	result = super_make_set_labels.makeLabel(set_dict, msrp_cache)
 	assert 'MSRP: $49.99' in result
 
 #============================
@@ -48,5 +48,5 @@ def test_make_label_without_msrp(monkeypatch):
 		'set_img_url': 'https://example.com/x.jpg',
 	}
 	msrp_cache = {}
-	result = superMakeSetLabels.makeLabel(set_dict, msrp_cache)
+	result = super_make_set_labels.makeLabel(set_dict, msrp_cache)
 	assert 'MSRP' not in result

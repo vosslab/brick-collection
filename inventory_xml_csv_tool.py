@@ -9,6 +9,9 @@ import csv
 # PIP3 modules
 import lxml.etree
 
+# Local Repo Modules
+import libbrick.path_utils
+
 #==============
 # BrickLink XML ↔ CSV Converter
 #
@@ -264,11 +267,12 @@ def auto_output_filename(input_file: str, mode: str) -> str:
 	Returns:
 		str: Output file path.
 	"""
-	base, _ = os.path.splitext(input_file)
+	output_dir = libbrick.path_utils.get_output_dir()
+	base, _ = os.path.splitext(os.path.basename(input_file))
 	if mode == 'xml2csv':
-		return base + '.csv'
+		return os.path.join(output_dir, base + '.csv')
 	else:
-		return base + '.xml'
+		return os.path.join(output_dir, base + '.xml')
 
 
 #==============

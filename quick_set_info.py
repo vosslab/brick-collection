@@ -9,6 +9,7 @@ import argparse
 
 # Local Repo Modules
 import libbrick
+import libbrick.path_utils
 import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
 import libbrick.wrappers.brickset_wrapper as brickset_wrapper
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
@@ -212,7 +213,8 @@ if __name__ == '__main__':
 	#============================
 	#============================
 	timestamp = libbrick.make_timestamp()
-	csvfile = f"quick_set_info-{timestamp}.csv"
+	output_dir = libbrick.path_utils.get_output_dir()
+	csvfile = os.path.join(output_dir, f"quick_set_info-{timestamp}.csv")
 
 	#============================
 	#============================
