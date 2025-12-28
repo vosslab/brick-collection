@@ -199,7 +199,7 @@ def determine_mode(input_file: str) -> str:
 		SystemExit: If file extension is not .xml or .csv.
 	"""
 	ext = os.path.splitext(input_file)[1].lower()
-	if ext == '.xml':
+	if ext == '.xml' or ext == ".bsx":
 		return 'xml2csv'
 	elif ext == '.csv':
 		return 'csv2xml'
