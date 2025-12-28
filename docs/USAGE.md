@@ -3,6 +3,18 @@
 ## Output directory
 - Scripts write output files to `output/` by default.
 
+## macOS setup
+- Install tools and Python deps:
+```bash
+brew bundle
+pip3 install -r pip_requirements.txt
+```
+- `brew bundle` installs `mactex-no-gui` for LaTeX.
+
+## Caches and images
+- MSRP cache lives at `CACHE/msrp_cache.yml`.
+- Label image cache uses `images/raw/` and `images/processed/` with `rembg` + Pillow trim.
+
 ## Label scripts
 - `super_make_minifig_labels.py`: generate minifig labels from a minifig ID list.
 - `super_make_set_labels.py`: generate set labels from a set ID list.

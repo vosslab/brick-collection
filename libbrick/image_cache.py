@@ -7,6 +7,8 @@ import subprocess
 
 # PIP3 modules
 import requests
+import PIL.Image
+import PIL.ImageChops
 
 # local repo modules
 import libbrick.path_utils
@@ -32,8 +34,6 @@ def ensure_image_tools_installed() -> None:
 	"""
 	if shutil.which('rembg') is None:
 		raise FileNotFoundError("rembg not found in PATH")
-	if shutil.which('mogrify') is None:
-		raise FileNotFoundError("mogrify not found in PATH")
 
 #============================
 
@@ -72,6 +72,52 @@ def download_image(image_url: str, filename: str) -> str:
 
 #============================
 
+def _get_background_color(image: PIL.Image.Image) -> tuple:
+	"""
+	Determine a likely background color by sampling corners.
+	"""
+	width, height = image.size
+	max_x = max(0, width - 1)
+	max_y = max(0, height - 1)
+	x1 = min(1, max_x)
+	y1 = min(1, max_y)
+	x2 = max(0, max_x - 1)
+	y2 = max(0, max_y - 1)
+	sample_pixels = [
+		image.getpixel((0, 0)), image.getpixel((x1, 0)),
+		image.getpixel((0, y1)), image.getpixel((x1, y1)),
+		image.getpixel((max_x, 0)), image.getpixel((x2, 0)),
+		image.getpixel((max_x, y1)), image.getpixel((x2, y1)),
+		image.getpixel((0, max_y)), image.getpixel((x1, max_y)),
+		image.getpixel((0, y2)), image.getpixel((x1, y2)),
+		image.getpixel((max_x, max_y)), image.getpixel((x2, max_y)),
+		image.getpixel((max_x, y2)), image.getpixel((x2, y2)),
+	]
+	return max(set(sample_pixels), key=sample_pixels.count)
+
+#============================
+
+def _trim_image(image: PIL.Image.Image, tolerance: int = 3) -> PIL.Image.Image:
+	"""
+	Trim borders from an image based on alpha or background color.
+	"""
+	if 'A' in image.getbands():
+		alpha = image.split()[-1]
+		bbox = alpha.getbbox()
+		if bbox:
+			return image.crop(bbox)
+		return image
+	bg_color = _get_background_color(image)
+	bg = PIL.Image.new(image.mode, image.size, bg_color)
+	diff = PIL.ImageChops.difference(image, bg)
+	diff = PIL.ImageChops.add(diff, diff, 2.0, -tolerance)
+	bbox = diff.getbbox()
+	if bbox:
+		return image.crop(bbox)
+	return image
+
+#============================
+
 def process_image(raw_filename: str, processed_filename: str) -> str:
 	"""
 	Remove background and trim the image for label use.
@@ -80,7 +126,10 @@ def process_image(raw_filename: str, processed_filename: str) -> str:
 		return processed_filename
 	ensure_image_tools_installed()
 	subprocess.run(['rembg', 'i', raw_filename, processed_filename], check=True)
-	subprocess.run(['mogrify', '-trim', processed_filename], check=True)
+	with PIL.Image.open(processed_filename) as image:
+		trimmed = _trim_image(image)
+		trimmed = trimmed.copy()
+	trimmed.save(processed_filename)
 	return processed_filename
 
 #============================

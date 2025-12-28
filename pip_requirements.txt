@@ -1,5 +1,9 @@
 brickse
+lxml
+pillow
+pytest
 python-bricklink-api
 pyyaml
 rebrick
+rembg[cli]
 requests

@@ -14,3 +14,6 @@
 - Add pytest conftest to ensure repo imports resolve in tests.
 - Add `libbrick/minifig_sets.py` helper and split `find_set_for_minifig.py` into a thin CLI.
 - Add `docs/USAGE.md` with updated snake_case script names.
+- Update docs for output/cache locations and expand `pip_requirements.txt`.
+- Add Brewfile for LaTeX tooling and replace ImageMagick trim with Pillow.
+- Add setup snippet for `brew bundle` and `pip3 install -r pip_requirements.txt`.
