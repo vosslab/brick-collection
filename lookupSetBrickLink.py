@@ -4,7 +4,7 @@ import os
 import sys
 
 import libbrick
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 #============================
 #============================

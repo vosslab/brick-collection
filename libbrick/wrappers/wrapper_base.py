@@ -1,11 +1,17 @@
+# Standard Library
 import os
 import sys
 import html
 import json
 import time
-import yaml
 import random
 import unicodedata
+
+# PIP3 modules
+import yaml
+
+# local repo modules
+import libbrick.path_utils
 
 class BaseWrapperClass(object):
 	"""
@@ -60,7 +66,11 @@ class BaseWrapperClass(object):
 		Load cache data from files.
 		"""
 		print('==== LOAD CACHE ====')
-		cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
+		git_root = libbrick.path_utils.get_git_root()
+		if git_root is None:
+			cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
+		else:
+			cache_path = os.path.join(git_root, "CACHE")
 		for cache_name, cache_format in self.data_caches.items():
 			if cache_format == 'yaml':
 				cache_format = 'yml'
@@ -107,8 +117,13 @@ class BaseWrapperClass(object):
 			single_cache_name: Optional; name of a single cache to save.
 		"""
 		print('==== SAVE CACHE ====')
-		if not os.path.isdir('CACHE'):
-			os.mkdir('CACHE')
+		git_root = libbrick.path_utils.get_git_root()
+		if git_root is None:
+			cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
+		else:
+			cache_path = os.path.join(git_root, "CACHE")
+		if not os.path.isdir(cache_path):
+			os.mkdir(cache_path)
 		for cache_name, cache_format in self.data_caches.items():
 			if single_cache_name is not None and single_cache_name != cache_name:
 				#print('.. skipping cache: ', cache_name)
@@ -116,7 +131,7 @@ class BaseWrapperClass(object):
 			if cache_format == 'yaml':
 				cache_format = 'yml'
 			t0 = time.time()
-			file_name = 'CACHE/' + cache_name + '.' + cache_format
+			file_name = os.path.join(cache_path, cache_name + '.' + cache_format)
 			cache_data = getattr(self, cache_name)
 			if len(cache_data) > 0:
 				with open(file_name, 'w') as f:
@@ -231,4 +246,3 @@ class BaseWrapperClass(object):
 		normalized_string = unicodedata.normalize('NFKD', decoded_string).encode('ISO-8859-1', 'ignore').decode('ISO-8859-1')
 
 		return normalized_string
-

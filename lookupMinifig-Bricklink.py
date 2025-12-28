@@ -7,7 +7,7 @@ import time
 import random
 
 import libbrick
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 #============================
 #============================

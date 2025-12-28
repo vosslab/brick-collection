@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
+# Standard Library
 import os
 import sys
-import time
-import yaml
 import json
+import time
 import random
+
+# PIP3 modules
+import yaml
 import brickse
-import wrapper_base
+
+# local repo modules
+import libbrick.path_utils
+import libbrick.wrappers.wrapper_base as wrapper_base
 
 class BrickSet(wrapper_base.BaseWrapperClass):
 	#============================
@@ -16,15 +22,18 @@ class BrickSet(wrapper_base.BaseWrapperClass):
 		self.debug = True
 		key_file_name = 'brickset_api_private.yml'
 		local_key_path = os.path.join(os.path.dirname(__file__), key_file_name)
+		git_root = libbrick.path_utils.get_git_root()
 		self.api_data = None  # Ensure it's defined
-		# Check in the current working directory
-		if os.path.exists(key_file_name):
-			with open(key_file_name, 'r') as f:
-				self.api_data = yaml.safe_load(f)
-		# Check in the script's directory
-		elif os.path.exists(local_key_path):
-			with open(local_key_path, 'r') as f:
-				self.api_data = yaml.safe_load(f)
+		key_paths = []
+		if git_root is not None:
+			key_paths.append(os.path.join(git_root, key_file_name))
+		key_paths.append(key_file_name)
+		key_paths.append(local_key_path)
+		for key_path in key_paths:
+			if os.path.exists(key_path):
+				with open(key_path, 'r') as f:
+					self.api_data = yaml.safe_load(f)
+				break
 		# If no valid file was found, exit with an error
 		if self.api_data is None:
 			print("Error: API key file not found.")

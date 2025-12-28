@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
-import random
-
 import libbrick
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 if __name__ == '__main__':
 	set_list = libbrick.read_setIDs_from_file('five_days_of_sets.csv')

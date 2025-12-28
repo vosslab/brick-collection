@@ -6,7 +6,7 @@ import time
 import random
 import shutil
 import requests
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 latex_header = r"""
 \documentclass[letterpaper]{article}% Avery 5163
@@ -185,7 +185,6 @@ def main():
 		print("usage: ./makeLabels.py <rebrick csv txt file>")
 		sys.exit(1)
 
-	legoIDs = []
 	with open(legoidFile, "r") as f:
 		line_count = 0
 		keys = None
@@ -219,7 +218,6 @@ def main():
 		for set_dict in set_info_tree:
 			count += 1
 			setID = set_dict['set_id']
-			legoID = int(setID.split('-')[0])
 			price_dict = BLwrap.getSetPriceData(setID)
 			label = makeLabel(set_dict, price_dict)
 			f.write(label)
@@ -231,4 +229,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-

@@ -133,6 +133,19 @@ result = make_key({'ID': 12, 'Name': 'JoHN  '}, ('ID', 'Name'))
 assert result == '12 john'
 ```
 
+## PYTEST
+* Prefer pytest for automated tests when a repo has more than a few simple asserts.
+* Store tests in tests/ with files named test_*.py.
+* Test functions should be named test_* and should use plain assert.
+* Keep tests small and deterministic. Avoid network calls, random behavior, and time based logic unless mocked.
+* Prefer fixtures for setup and shared resources. Use built in fixtures like tmp_path instead of custom temp directories.
+* Avoid complex logic inside tests. If test logic needs comments, move the logic into helper functions and test those helpers.
+* Basic commands:
+* pytest run all tests
+* pytest -q quiet
+* pytest -k name run tests matching a substring
+* pytest -x stop on first failure
+
 ## TYPE HINTING
 * Use the python3-style explicit variable type hinting. I think it is good practice. Very little of my code uses it now, but I want to change that. For example,
 ```python

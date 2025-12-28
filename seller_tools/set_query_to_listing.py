@@ -10,7 +10,7 @@ sys.path.append(parent_dir)
 
 # Import custom module from parent directory
 import libbrick
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 def ask_yes_no(question, default="no"):
     """Prompt a yes/no question to the user with a default answer."""

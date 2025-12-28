@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # Import necessary modules
-import os
 import csv
 import sys
 import time
@@ -10,7 +9,7 @@ import argparse
 
 # Modules related to Lego functionality
 import libbrick
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 FAVORITE_COLUMNS = [
 	'total quantity', 'item_id', 'color_name', 'name',

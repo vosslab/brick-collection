@@ -3,16 +3,13 @@
 # Standard Library
 import os
 import sys
-import time
-import copy
-import string
 import argparse
 
 # Local Repo Modules
 import libbrick
-import rebrick_wrapper
-import brickset_wrapper
-import bricklink_wrapper
+import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
+import libbrick.wrappers.brickset_wrapper as brickset_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 #============================
 #============================

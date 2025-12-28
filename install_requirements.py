@@ -7,7 +7,7 @@ def install(package):
 
 def is_installed(package):
 	try:
-		proc = subprocess.check_call([sys.executable, "-m", "pip", "show", package])
+		subprocess.check_call([sys.executable, "-m", "pip", "show", package])
 		return True
 	except subprocess.CalledProcessError:
 		return False

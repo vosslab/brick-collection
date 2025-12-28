@@ -3,7 +3,7 @@
 import csv
 import re
 import time
-import bricklink_wrapper as BLW
+import libbrick.wrappers.bricklink_wrapper as BLW
 import math
 
 # Define the bag sizes in mL

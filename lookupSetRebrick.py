@@ -4,7 +4,7 @@ import os
 import sys
 
 import libbrick
-import rebrick_wrapper
+import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
 
 #============================
 #============================

@@ -7,7 +7,7 @@ import time
 import random
 import shutil # to save it locally
 import requests # to get image from the web
-import bricklink_wrapper
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 latex_header = r"""
 \\documentclass[letterpaper]{article}% Avery 18260
@@ -81,7 +81,7 @@ def downloadImage(image_url, filename=None):
 #============================
 #============================
 def makeLabel(minifig_dict, price_dict):
-	"""
+	r"""
 	\begin{legocell}{minifig_sw0094.jpg}
 	Minifig ID from set Lego ID (Year)\\
 	Name
@@ -105,7 +105,7 @@ def makeLabel(minifig_dict, price_dict):
 
 	minifig_name = minifig_dict.get('name')
 	minifig_name = minifig_name.replace('#', '')
-	minifig_name = re.sub('\([^\)]+\)', '', minifig_name)
+	minifig_name = re.sub(r'\([^\)]+\)', '', minifig_name)
 	if len(minifig_name) > 64:
 		new_name = ''
 		bits = minifig_name.split(' ')
@@ -142,13 +142,13 @@ def makeLabel(minifig_dict, price_dict):
 	## FROM SET [] and YEAR ()
 	latex_str += '\\vspace{-1pt} '
 	if set_num is not None and len(set_num) > 3:
-		latex_str += ('{\\tiny \> from set \\textbf{ '
+		latex_str += (r'{\\tiny \> from set \\textbf{ '
 			+str(set_num)
 			+ ' } \\footnotesize ('
 			+minifig_dict.get('year_released')
 			+')}\\par \n')
 	else:
-		latex_str += ('{\\footnotesize \> release year: '
+		latex_str += (r'{\\footnotesize \> release year: '
 			+minifig_dict.get('year_released')
 			+'}\\par \n')
 
@@ -168,12 +168,12 @@ def makeLabel(minifig_dict, price_dict):
 		latex_str += '{\\sffamily\\tiny '
 		latex_str += 'sale: '
 		if new_median_sale_price > 0 and used_median_sale_price > 0:
-			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+			latex_str += r'\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
 			new_median_sale_price/100., new_sale_qty, used_median_sale_price/100., used_sale_qty)
 		elif new_sale_qty > 0 and new_median_sale_price > 0:
-			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_sale_price/100., new_sale_qty)
+			latex_str += r'\${0:.2f} new ({1:d})'.format(new_median_sale_price/100., new_sale_qty)
 		elif used_sale_qty > 0 and used_median_sale_price > 0:
-			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_sale_price/100., used_sale_qty)
+			latex_str += r'\${0:.2f} used ({1:d})'.format(used_median_sale_price/100., used_sale_qty)
 		latex_str += '}\\\\\n'
 
 	### LIST INFO
@@ -186,12 +186,12 @@ def makeLabel(minifig_dict, price_dict):
 		latex_str += '{\\sffamily\\tiny '
 		latex_str += 'list: '
 		if new_median_list_price > 0 and used_median_list_price > 0:
-			latex_str += '\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
+			latex_str += r'\${0:.2f} new ({1:d}) / \${2:.2f} used ({3:d})'.format(
 			new_median_list_price/100., new_list_qty, used_median_list_price/100., used_list_qty)
 		elif new_list_qty > 0 and new_median_list_price > 0:
-			latex_str += '\${0:.2f} new ({1:d})'.format(new_median_list_price/100., new_list_qty)
+			latex_str += r'\${0:.2f} new ({1:d})'.format(new_median_list_price/100., new_list_qty)
 		elif used_list_qty > 0 and used_median_list_price > 0:
-			latex_str += '\${0:.2f} used ({1:d})'.format(used_median_list_price/100., used_list_qty)
+			latex_str += r'\${0:.2f} used ({1:d})'.format(used_median_list_price/100., used_list_qty)
 		latex_str += '}\\\\\n'
 
 	latex_str += '\\end{legocell}\n'

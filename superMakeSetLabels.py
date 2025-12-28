@@ -2,14 +2,12 @@
 
 import os
 import sys
-import time
-import random
-import shutil
-import requests
 
 import libbrick
-import bricklink_wrapper
-import rebrick_wrapper
+import libbrick.image_cache
+import libbrick.msrp_loader
+import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
+import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
 
 latex_header = r"""
 \documentclass[letterpaper]{article}% Avery 5163
@@ -53,90 +51,15 @@ latex_header = r"""
 
 latex_footer = r"\end{document}\n"
 
-def downloadImage(image_url: str, filename: str = None) -> str:
-	"""
-	Download an image from a given URL and save it locally.
+#============================
 
-	Args:
-		image_url: URL of the image to download.
-		filename: Optional; local filename to save the image as.
-
-	Returns:
-		Filename of the saved image.
-	"""
-	if image_url is None:
-		raise TypeError
-	if filename is None:
-		filename = os.path.basename(image_url)
-	if os.path.exists(filename):
-		print(".")
-		return filename
-	time.sleep(random.random())
-	r = requests.get(image_url, stream=True)
-	if r.status_code == 200:
-		r.raw.decode_content = True
-		with open(filename, 'wb') as f:
-			shutil.copyfileobj(r.raw, f)
-		print(f'.. image successfully downloaded: {filename}')
-	else:
-		print(f"!! image couldn't be retrieved: {image_url}")
-		raise FileNotFoundError
-	return filename
-
-def format_price_info(new_price: float, new_qty: int, used_price: float, used_qty: int) -> str:
-	"""
-	Format the price information for the LaTeX label.
-
-	Args:
-		new_price: Median sale price for new sets.
-		new_qty: Quantity of new sets available.
-		used_price: Median sale price for used sets.
-		used_qty: Quantity of used sets available.
-
-	Returns:
-		Formatted LaTeX string for the price information.
-	"""
-	price_info = r'{\sffamily\scriptsize sale: '
-	if new_price > 0 and used_price > 0:
-		price_info += f'\\${new_price/100:.2f} new ({new_qty}) / \\${used_price/100:.2f} used ({used_qty})'
-	elif new_qty > 0 and new_price > 0:
-		price_info += f'\\${new_price/100:.2f} new ({new_qty})'
-	elif used_qty > 0 and used_price > 0:
-		price_info += f'\\${used_price/100:.2f} used ({used_qty})'
-	price_info += r'}'
-	return price_info
-
-def format_list_info(new_list_price: float, new_list_qty: int, used_list_price: float, used_list_qty: int) -> str:
-	"""
-	Format the list price information for the LaTeX label.
-
-	Args:
-		new_list_price: Median list price for new sets.
-		new_list_qty: Quantity of new sets listed.
-		used_list_price: Median list price for used sets.
-		used_list_qty: Quantity of used sets listed.
-
-	Returns:
-		Formatted LaTeX string for the list price information.
-	"""
-	list_info = r'{\sffamily\scriptsize list: '
-	if new_list_price > 0 and used_list_price > 0:
-		list_info += f'\\${new_list_price/100:.2f} new ({new_list_qty}) / \\${used_list_price/100:.2f} used ({used_list_qty})'
-	elif new_list_qty > 0 and new_list_price > 0:
-		list_info += f'\\${new_list_price/100:.2f} new ({new_list_qty})'
-	elif used_list_qty > 0 and used_list_price > 0:
-		list_info += f'\\${used_list_price/100:.2f} used ({used_list_qty})'
-	list_info += r'}'
-	return list_info
-
-
-def makeLabel(set_dict: dict, price_dict: dict) -> str:
+def makeLabel(set_dict: dict, msrp_cache: dict) -> str:
 	"""
 	Create a LaTeX formatted label for a LEGO set.
 
 	Args:
 		set_dict: Dictionary containing set information.
-		price_dict: Dictionary containing price information.
+		msrp_cache: Dictionary containing MSRP cache values.
 
 	Returns:
 		Formatted LaTeX string for the label.
@@ -144,12 +67,8 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 	set_id = set_dict.get('set_id')
 	lego_id = int(set_id.split('-')[0])
 	print(f'Processing Set {lego_id}')
-	if not os.path.isdir('images'):
-		os.mkdir('images')
-	filename = f"images/set_{set_id}.jpg"
 	image_url = set_dict.get('set_img_url')
-	print(filename)
-	downloadImage(image_url, filename)
+	filename = libbrick.image_cache.get_cached_image(image_url, 'set', set_id)
 
 	set_name = set_dict.get('name').replace('#', '').replace(' & ', ' and ')
 
@@ -160,19 +79,9 @@ def makeLabel(set_dict: dict, price_dict: dict) -> str:
 	latex_str += '    ' + (r'(\textbf{' + str(set_dict.get('year_released')) + r'})' + r'\\' + '\n')
 	latex_str += '    ' + (r'{\normalsize ' + str(set_dict.get('num_parts')) + r' pieces}' + r'\\' + '\n')
 
-	latex_str += '    ' + format_price_info(
-		float(price_dict['new_median_sale_price']),
-		int(price_dict['new_sale_qty']),
-		float(price_dict['used_median_sale_price']),
-		int(price_dict['used_sale_qty'])
-	).replace(r'\\', r'\\\\') + '\n'
-
-	latex_str += '    ' + format_list_info(
-		float(price_dict['new_median_list_price']),
-		int(price_dict['new_list_qty']),
-		float(price_dict['used_median_list_price']),
-		int(price_dict['used_list_qty'])
-	).replace(r'\\', r'\\\\') + '\n'
+	msrp = msrp_cache.get(str(set_id))
+	if msrp is not None and msrp > 0:
+		latex_str += '    ' + (r'{\sffamily\scriptsize MSRP: $' + f'{msrp/100:.2f}' + r'}' + r'\\' + '\n')
 
 	latex_str += r'\end{legocell}' + '\n'
 	print(f'{lego_id} -- {set_dict.get("theme_name")} ({set_dict.get("year")}) -- {set_dict.get("name")}')
@@ -194,10 +103,10 @@ def main():
 		sys.exit(1)
 
 	setIDs = libbrick.read_setIDs_from_file(setIDFile)
-	timestamp = libbrick.make_timestamp()
 
 	BLW = bricklink_wrapper.BrickLink()
 	RBW = rebrick_wrapper.Rebrick()
+	msrp_cache = libbrick.msrp_loader.load_msrp_cache()
 
 	set_data_tree = []
 	for setID in setIDs:
@@ -225,15 +134,13 @@ def main():
 		for set_dict in set_data_tree:
 			count += 1
 			setID = set_dict.get('set_id')
-			legoID = int(setID.split('-')[0])
-			price_dict = BLW.getSetPriceData(setID)
-			label = makeLabel(set_dict, price_dict)
+			label = makeLabel(set_dict, msrp_cache)
 			f.write(label)
 			if count % 2 == 0:
 				f.write(f'% page {count//10 + 1} of {total_pages} --- gap line --- count {count} of {total_sets} ---\n')
 		f.write(latex_footer)
 	BLW.close()
-	print(f'mogrify -verbose -trim images/set_*.jpg; \nxelatex {outfile}; \nopen {pdffile}')
+	print(f'xelatex {outfile}; \nopen {pdffile}')
 	sys.stderr.write("\n")
 
 
