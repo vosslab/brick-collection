@@ -9,6 +9,14 @@
 - Use `-outdir=...` syntax for latexmk compatibility.
 - Retry latexmk after cleaning when the previous run left errors behind.
 - Close BrickLink wrapper in `seller_tools/set_query_to_listing.py`.
+- Run latexmk with `-cd` so image paths resolve relative to the TeX file.
+- Escape dollar signs in MSRP output to avoid LaTeX errors.
+- Add `import_msrp_csv.py` to load retail prices into the MSRP cache.
+- Remove MSRP cache overwrite option from the importer.
+- Switch rembg processing to the `isnet-general-use` model for LEGO images.
+- Put MSRP on the same line as piece count and bump the LEGO ID size on labels.
+- Crop processed images up to 10 percent to better match label aspect ratio.
+- Increase label image size and make set name size adapt to long titles.
 
 ## 2025-12-28
 - Remove BrickLink price lines from minifig and set labels.

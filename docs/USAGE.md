@@ -20,6 +20,22 @@ pip3 install -r pip_requirements.txt
 ## Caches and images
 - MSRP cache lives at `CACHE/msrp_cache.yml`.
 - Label image cache uses `images/raw/` and `images/processed/` with `rembg` + Pillow trim.
+- Default rembg model is `isnet-general-use` for LEGO set images.
+- Processed images may be cropped up to 10 percent to better fit the label aspect ratio.
+
+## MSRP cache import
+- `import_msrp_csv.py`: add retail prices to `CACHE/msrp_cache.yml`.
+- CSV needs `Number` and `Retail` columns (comma, tab, or whitespace).
+- Example input:
+```csv
+Number,Retail
+10294-1,679.99
+```
+- Example run:
+```bash
+./import_msrp_csv.py path/to/msrp.csv
+```
+- Use `--assume-cents` if prices are already in cents.
 
 ## Label scripts
 - `super_make_minifig_labels.py`: generate minifig labels from a minifig ID list.

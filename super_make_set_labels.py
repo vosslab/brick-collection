@@ -28,12 +28,12 @@ latex_header = r"""
 	% Avery 5163 described as 2in by 4in
 	\varwidth{3.6in}
 	\raggedright % but measures 4.125in wide
-	\begin{minipage}[c]{1.3in}
-		\includegraphics[width=1.29in,
-			height=1.85in,
+	\begin{minipage}[c]{1.45in}
+		\includegraphics[width=1.45in,
+			height=1.95in,
 			keepaspectratio]{#1}
 	\end{minipage}
-	\begin{minipage}[c]{2.2in}
+	\begin{minipage}[c]{2.05in}
 	\raggedright
 }
 {
@@ -78,15 +78,21 @@ def makeLabel(set_dict: dict, msrp_cache: dict, output_dir: str = None) -> str:
 	set_name = set_dict.get('name').replace('#', '').replace(' & ', ' and ')
 
 	latex_str  = (r'\begin{legocell}{' + filename + r'}' + '\n')
-	latex_str += '    ' + (r'\textbf{' + str(lego_id) + r'}' + r'\\' + '\n')
-	latex_str += '    ' + (r'{\sffamily\large ' + set_name + r'}' + r'\\' + '\n')
+	name_size = 'Large'
+	if len(set_name) > 38:
+		name_size = 'normalsize'
+	elif len(set_name) > 28:
+		name_size = 'large'
+	latex_str += '    ' + (r'\textbf{\huge ' + str(lego_id) + r'}' + r'\\' + '\n')
+	latex_str += '    ' + ('{\\sffamily\\' + name_size + ' ' + set_name + r'}' + r'\\' + '\n')
 	latex_str += '    ' + (r'\textsc{\color{DarkBlue}\normalsize ' + set_dict.get('category_name') + r'}' + r'\\' + '\n')
 	latex_str += '    ' + (r'(\textbf{' + str(set_dict.get('year_released')) + r'})' + r'\\' + '\n')
-	latex_str += '    ' + (r'{\normalsize ' + str(set_dict.get('num_parts')) + r' pieces}' + r'\\' + '\n')
-
 	msrp = msrp_cache.get(str(set_id))
+	pieces_line = r'{\normalsize ' + str(set_dict.get('num_parts')) + r' pieces'
 	if msrp is not None and msrp > 0:
-		latex_str += '    ' + (r'{\sffamily\scriptsize MSRP: $' + f'{msrp/100:.2f}' + r'}' + r'\\' + '\n')
+		pieces_line += r' \ \ MSRP: \$' + f'{msrp/100:.2f}'
+	pieces_line += r'}'
+	latex_str += '    ' + pieces_line + r'\\' + '\n'
 
 	latex_str += r'\end{legocell}' + '\n'
 	print(f'{lego_id} -- {set_dict.get("theme_name")} ({set_dict.get("year")}) -- {set_dict.get("name")}')

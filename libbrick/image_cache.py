@@ -15,6 +15,13 @@ import libbrick.path_utils
 
 #============================
 #============================
+REMBG_MODEL = 'isnet-general-use'
+LABEL_IMAGE_WIDTH_IN = 1.45
+LABEL_IMAGE_HEIGHT_IN = 1.95
+LABEL_MAX_CROP_FRACTION = 0.10
+
+#============================
+#============================
 def ensure_images_directory(base_dir: str) -> None:
 	"""
 	Creates an 'images' directory with raw and processed subfolders.
@@ -118,16 +125,53 @@ def _trim_image(image: PIL.Image.Image, tolerance: int = 3) -> PIL.Image.Image:
 
 #============================
 
-def process_image(raw_filename: str, processed_filename: str) -> str:
+def _crop_to_aspect(image: PIL.Image.Image, target_ratio: float,
+		max_crop_fraction: float) -> PIL.Image.Image:
+	"""
+	Crop the image toward a target width/height ratio with a max crop limit.
+	"""
+	width, height = image.size
+	if width <= 0 or height <= 0:
+		return image
+	current_ratio = width / float(height)
+	if abs(current_ratio - target_ratio) < 0.01:
+		return image
+	if current_ratio > target_ratio:
+		new_width = int(height * target_ratio)
+		excess = max(0, width - new_width)
+		max_crop = int(width * max_crop_fraction)
+		crop_total = min(excess, max_crop)
+		left = crop_total // 2
+		right = width - (crop_total - left)
+		return image.crop((left, 0, right, height))
+	new_height = int(width / target_ratio)
+	excess = max(0, height - new_height)
+	max_crop = int(height * max_crop_fraction)
+	crop_total = min(excess, max_crop)
+	top = crop_total // 2
+	bottom = height - (crop_total - top)
+	return image.crop((0, top, width, bottom))
+
+#============================
+
+def process_image(raw_filename: str, processed_filename: str, model: str = None) -> str:
 	"""
 	Remove background and trim the image for label use.
 	"""
 	if os.path.exists(processed_filename):
 		return processed_filename
 	ensure_image_tools_installed()
-	subprocess.run(['rembg', 'i', raw_filename, processed_filename], check=True)
+	if model is None:
+		model = REMBG_MODEL
+	command = ['rembg', 'i']
+	if model:
+		command += ['-m', model]
+	command += [raw_filename, processed_filename]
+	subprocess.run(command, check=True)
 	with PIL.Image.open(processed_filename) as image:
 		trimmed = _trim_image(image)
+		target_ratio = LABEL_IMAGE_WIDTH_IN / float(LABEL_IMAGE_HEIGHT_IN)
+		trimmed = _crop_to_aspect(trimmed, target_ratio, LABEL_MAX_CROP_FRACTION)
 		trimmed = trimmed.copy()
 	trimmed.save(processed_filename)
 	return processed_filename

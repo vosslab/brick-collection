@@ -37,6 +37,7 @@ def compile_with_latexmk(tex_file: str, output_dir: str, pdf_file: str = None) -
 def _build_latexmk_command(tex_file: str, output_dir: str) -> list:
 	command = [
 		'latexmk',
+		'-cd',
 		'-xelatex',
 		'-interaction=nonstopmode',
 		'-halt-on-error',
