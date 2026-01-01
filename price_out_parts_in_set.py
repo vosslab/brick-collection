@@ -174,7 +174,7 @@ def main():
 
 	# Prepare the CSV file for data writing
 	timestamp = libbrick.make_timestamp()
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='print_out')
 	csvfile = os.path.join(output_dir, "part_data_for_{0}-bricklink-{1}.csv".format(legoid, timestamp))
 
 	with open(csvfile, 'w', newline='') as file:

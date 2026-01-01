@@ -22,7 +22,8 @@ echo 'api_key: db161ef60f45e5d76cf92b6a6d6a3f6b' > rebrick_api_key.yml
 ./super_make_set_labels.py example_sets.csv
 
 # create PDF from TeX file
-xelatex output/labels-example_sets.tex
+latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error \
+  -outdir=output/super_make output/super_make/labels-example_sets.tex
 
 # open the PDF file in Preview.app
-open output/labels-example_sets.pdf
+open output/super_make/labels-example_sets.pdf

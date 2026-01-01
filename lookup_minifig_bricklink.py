@@ -24,7 +24,7 @@ if __name__ == '__main__':
 	minifigIDpairs = libbrick.read_minifigIDpairs_from_file(minifigIDFile)
 
 	timestamp = libbrick.make_timestamp()
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='lookup')
 	csvfile = os.path.join(output_dir, "minifig_data-bricklink-{0}.csv".format(timestamp))
 
 	f = open(csvfile, "w")

@@ -8,6 +8,7 @@ import random
 
 import libbrick
 import libbrick.image_cache
+import libbrick.latex_utils
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
@@ -57,13 +58,14 @@ latex_footer = r"\end{document}\n"
 
 #============================
 #============================
-def makeLabel(minifig_dict: dict, superset_count: int) -> str:
+def makeLabel(minifig_dict: dict, superset_count: int, output_dir: str = None) -> str:
 	"""
 	Generates a LaTeX string for a given minifigure.
 
 	Args:
 		minifig_dict (dict): Dictionary containing minifigure details.
 		superset_count (int): Number of sets the minifigure appears in.
+		output_dir (str): Output directory for the LaTeX file.
 
 	Returns:
 		str: LaTeX formatted string for the minifigure.
@@ -72,7 +74,7 @@ def makeLabel(minifig_dict: dict, superset_count: int) -> str:
 	set_num = get_set_num(minifig_dict)
 	minifig_id = minifig_dict.get('minifig_id')
 	print(f'-----\nProcessing Minifig {minifig_id} from Set {set_num}')
-	filename = download_minifig_image(minifig_dict, minifig_id)
+	filename = download_minifig_image(minifig_dict, minifig_id, output_dir)
 	minifig_name = format_minifig_name(minifig_dict.get('name'))
 	name_fontsize = determine_fontsize(minifig_name)
 	category_name = minifig_dict.get('category_name')
@@ -101,7 +103,8 @@ def get_set_num(minifig_dict: dict) -> str:
 			set_num = set_id.split('-')[0]
 	return set_num
 
-def download_minifig_image(minifig_dict: dict, minifig_id: str) -> str:
+def download_minifig_image(minifig_dict: dict, minifig_id: str,
+		output_dir: str = None) -> str:
 	"""
 	Downloads the minifigure image and returns the filename.
 
@@ -113,7 +116,9 @@ def download_minifig_image(minifig_dict: dict, minifig_id: str) -> str:
 		str: Filename where the image is saved.
 	"""
 	image_url = minifig_dict.get('image_url')
-	return libbrick.image_cache.get_cached_image(image_url, 'minifig', minifig_id)
+	return libbrick.image_cache.get_cached_image(
+		image_url, 'minifig', minifig_id, relpath_from=output_dir
+	)
 
 #============================
 
@@ -286,7 +291,7 @@ def main() -> None:
 	print(f"Found {total_minifigs} Minifigs to process")
 
 	filename_root = os.path.splitext(os.path.basename(minifigIDFile))[0]
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='super_make')
 	outfile = os.path.join(output_dir, f"labels-{filename_root}.tex")
 	pdffile = os.path.join(output_dir, f"labels-{filename_root}.pdf")
 
@@ -298,15 +303,14 @@ def main() -> None:
 		for minifig_dict in minifig_info_tree:
 			minifigID = minifig_dict['minifig_id']
 			count += 1
-			label = makeLabel(minifig_dict, minifig_dict.get('superset_count'))
+			label = makeLabel(minifig_dict, minifig_dict.get('superset_count'), output_dir)
 			f.write(label)
 			if count % 5 == 0:
 				f.write(f'% page {count//30 + 1} of {total_pages} --- gap line --- count {count} of {total_minifigs} ---\n')
 		f.write(latex_footer)
 
 	BLW.close()
-
-	print(f'\n\nxelatex -output-directory "{output_dir}" "{outfile}"; \nopen "{pdffile}"')
+	libbrick.latex_utils.compile_with_latexmk(outfile, output_dir, pdffile)
 
 #============================
 

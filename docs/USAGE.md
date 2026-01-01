@@ -1,7 +1,10 @@
 # Usage
 
 ## Output directory
-- Scripts write output files to `output/` by default.
+- Scripts write output files under `output/` by default.
+- `super_make_*` scripts use `output/super_make/`.
+- `price_out_*` scripts use `output/print_out/`.
+- `lookup_*` scripts use `output/lookup/`.
 
 ## Setup
 - See [docs/INSTALL.md](docs/INSTALL.md) for API keys and installation steps.

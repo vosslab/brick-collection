@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-01-01
+- Allow set ID validation for 1000-99999 and BrickLink 910000-910999 ranges.
+- Return image paths relative to the output directory when generating label TeX files.
+- Split outputs into `output/super_make/`, `output/print_out/`, and `output/lookup/`.
+- Compile label TeX files with `latexmk` in the `super_make_*` scripts.
+- Save Rebrick cache at the end of `super_make_set_labels.py`.
+- Use `-outdir=...` syntax for latexmk compatibility.
+- Retry latexmk after cleaning when the previous run left errors behind.
+- Close BrickLink wrapper in `seller_tools/set_query_to_listing.py`.
+
 ## 2025-12-28
 - Remove BrickLink price lines from minifig and set labels.
 - Add MSRP from `CACHE/msrp_cache.yml` to set labels.

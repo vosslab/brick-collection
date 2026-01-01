@@ -150,6 +150,7 @@ def main():
     )
     print("\nGenerated Description:")
     print(final_description)
+    BLW.close()
 
 if __name__ == "__main__":
     main()

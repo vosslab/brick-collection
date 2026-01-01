@@ -5,6 +5,7 @@ import sys
 
 import libbrick
 import libbrick.image_cache
+import libbrick.latex_utils
 import libbrick.msrp_loader
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
@@ -54,13 +55,14 @@ latex_footer = r"\end{document}\n"
 
 #============================
 
-def makeLabel(set_dict: dict, msrp_cache: dict) -> str:
+def makeLabel(set_dict: dict, msrp_cache: dict, output_dir: str = None) -> str:
 	"""
 	Create a LaTeX formatted label for a LEGO set.
 
 	Args:
 		set_dict: Dictionary containing set information.
 		msrp_cache: Dictionary containing MSRP cache values.
+		output_dir: Output directory for the LaTeX file.
 
 	Returns:
 		Formatted LaTeX string for the label.
@@ -69,7 +71,9 @@ def makeLabel(set_dict: dict, msrp_cache: dict) -> str:
 	lego_id = int(set_id.split('-')[0])
 	print(f'Processing Set {lego_id}')
 	image_url = set_dict.get('set_img_url')
-	filename = libbrick.image_cache.get_cached_image(image_url, 'set', set_id)
+	filename = libbrick.image_cache.get_cached_image(
+		image_url, 'set', set_id, relpath_from=output_dir
+	)
 
 	set_name = set_dict.get('name').replace('#', '').replace(' & ', ' and ')
 
@@ -126,7 +130,7 @@ def main():
 	print(f"Found {total_sets} Lego Sets to process")
 
 	filename_root = os.path.splitext(os.path.basename(setIDFile))[0]
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='super_make')
 	outfile = os.path.join(output_dir, f"labels-{filename_root}.tex")
 	pdffile = os.path.join(output_dir, f"labels-{filename_root}.pdf")
 	with open(outfile, 'w') as f:
@@ -136,13 +140,14 @@ def main():
 		for set_dict in set_data_tree:
 			count += 1
 			setID = set_dict.get('set_id')
-			label = makeLabel(set_dict, msrp_cache)
+			label = makeLabel(set_dict, msrp_cache, output_dir)
 			f.write(label)
 			if count % 2 == 0:
 				f.write(f'% page {count//10 + 1} of {total_pages} --- gap line --- count {count} of {total_sets} ---\n')
 		f.write(latex_footer)
 	BLW.close()
-	print(f'xelatex -output-directory "{output_dir}" "{outfile}"; \nopen "{pdffile}"')
+	RBW.close()
+	libbrick.latex_utils.compile_with_latexmk(outfile, output_dir, pdffile)
 	sys.stderr.write("\n")
 
 

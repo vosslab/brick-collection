@@ -77,7 +77,7 @@ def main():
 	setIDs = libbrick.read_setIDs_from_file(setIDFile)
 	timestamp = libbrick.make_timestamp()
 
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='lookup')
 	csvfile = os.path.join(output_dir, f"set_data-rebrick-{timestamp}.csv")
 	line_count = 0
 

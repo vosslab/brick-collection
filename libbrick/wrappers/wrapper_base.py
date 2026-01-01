@@ -160,12 +160,15 @@ class BaseWrapperClass(object):
 		"""
 		if not isinstance(legoID, int):
 			legoID = int(legoID)
-		if legoID < 3000:
-			print("Error: Lego set ID is too small: {0}".format(legoID))
+		if legoID < 1000:
+			print(f"Error: Lego set ID is too small: {legoID}")
 			raise KeyError
-		elif legoID > 99999:
-			print("Error: Lego set ID is too big: {0}".format(legoID))
-			#raise KeyError
+		if legoID <= 99999:
+			return True
+		if 910000 <= legoID <= 910999:
+			return True
+		print(f"Error: Lego set ID is too big: {legoID}")
+		#raise KeyError
 		return True
 
 	#============================

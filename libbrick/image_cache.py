@@ -135,7 +135,8 @@ def process_image(raw_filename: str, processed_filename: str) -> str:
 #============================
 
 def get_cached_image(image_url: str, image_prefix: str, item_id: str,
-		raw_ext: str = 'jpg', processed_ext: str = 'png') -> str:
+		raw_ext: str = 'jpg', processed_ext: str = 'png',
+		relpath_from: str = None) -> str:
 	"""
 	Fetch, cache, and process an image, returning a path suitable for LaTeX.
 	"""
@@ -151,6 +152,8 @@ def get_cached_image(image_url: str, image_prefix: str, item_id: str,
 	)
 	download_image(image_url, raw_filename)
 	process_image(raw_filename, processed_filename)
+	if relpath_from is not None:
+		return os.path.relpath(processed_filename, relpath_from)
 	if git_root is None:
 		return processed_filename
 	return os.path.relpath(processed_filename, git_root)

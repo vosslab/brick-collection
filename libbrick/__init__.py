@@ -247,29 +247,33 @@ def processSetID(setID):
 	if setID is None:
 		return None
 	if isinstance(setID, int):
-		if 1000 < setID < 99999:
-			setID = '{0}-1'.format(setID)
+		legoID = setID
+		if 1000 <= legoID <= 99999 or 910000 <= legoID <= 910999:
+			setID = f"{legoID}-1"
 			return setID
-		print("?setID?? - '{0}'".format(setID))
+		print(f"?setID?? - '{legoID}'")
 		return None
 	if not isinstance(setID, str):
-		print("?setID?? - '{0}'".format(setID))
+		print(f"?setID?? - '{setID}'")
 		return None
 	if ' ' in setID:
 		return None
 	if re.search(r'^[A-Za-z]+$', setID):
 		return None
-	if re.search(r'^[0-9]{4,5}-[0-9]+$', setID):
-		#perfect
-		return setID
-	if re.search('^[0-9]{4,5}$', setID):
-		setID = int(setID)
-		if 1000 < setID < 99999:
-			setID = '{0}-1'.format(setID)
+	if re.search(r'^[0-9]{4,6}-[0-9]+$', setID):
+		legoID = int(setID.split('-')[0])
+		if 1000 <= legoID <= 99999 or 910000 <= legoID <= 910999:
 			return setID
-		print("?setID?? - '{0}'".format(setID))
+		print(f"?setID?? - '{setID}'")
 		return None
-	print("?setID?? - '{0}'".format(setID))
+	if re.search(r'^[0-9]{4,6}$', setID):
+		legoID = int(setID)
+		if 1000 <= legoID <= 99999 or 910000 <= legoID <= 910999:
+			setID = f"{legoID}-1"
+			return setID
+		print(f"?setID?? - '{setID}'")
+		return None
+	print(f"?setID?? - '{setID}'")
 	return None
 
 #============================

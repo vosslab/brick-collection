@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	BLW = bricklink_wrapper.BrickLink()
 	sys.stderr.write(".")
 	timestamp = libbrick.make_timestamp()
-	output_dir = libbrick.path_utils.get_output_dir()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='print_out')
 	csvfile = os.path.join(output_dir, "element_price_data-bricklink-{0}.csv".format(timestamp))
 	f = open(csvfile, "w")
 	line = 0
