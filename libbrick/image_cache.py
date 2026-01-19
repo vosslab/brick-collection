@@ -66,7 +66,7 @@ def download_image(image_url: str, filename: str) -> str:
 		return filename
 	image_url = normalize_image_url(image_url)
 	time.sleep(random.random())
-	r = requests.get(image_url, stream=True)
+	r = requests.get(image_url, stream=True, timeout=15)
 	if r.status_code == 200:
 		r.raw.decode_content = True
 		with open(filename, 'wb') as f:

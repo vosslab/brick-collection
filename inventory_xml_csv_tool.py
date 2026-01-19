@@ -13,7 +13,7 @@ import lxml.etree
 import libbrick.path_utils
 
 #==============
-# BrickLink XML ↔ CSV Converter
+# BrickLink XML <-> CSV Converter
 #
 # Purpose:
 # ---------
@@ -122,7 +122,7 @@ def xml_to_csv(xml_file: str, csv_file: str) -> None:
 	print("Type breakdown:")
 	for t, c in type_counts.items():
 		print(f"  {t}: {c}")
-	print(f"XML → CSV conversion complete: {csv_file}")
+	print(f"XML -> CSV conversion complete: {csv_file}")
 
 
 #==============
@@ -183,7 +183,7 @@ def csv_to_xml(csv_file: str, xml_file: str, bltype: str) -> None:
 	print("Type breakdown:")
 	for t, c in type_counts.items():
 		print(f"  {t}: {c}")
-	print(f"CSV → XML conversion complete: {xml_file}")
+	print(f"CSV -> XML conversion complete: {xml_file}")
 
 #==============
 def determine_mode(input_file: str) -> str:
@@ -278,7 +278,7 @@ def auto_output_filename(input_file: str, mode: str) -> str:
 #==============
 def main() -> None:
 	parser = argparse.ArgumentParser(
-		description='BrickLink Inventory XML ↔ CSV Converter'
+		description='BrickLink Inventory XML <-> CSV Converter'
 	)
 
 	parser.add_argument(
@@ -350,8 +350,11 @@ def main() -> None:
 
 	detected_mode = determine_mode(args.input_file)
 	if args.mode and args.mode != detected_mode:
-		print(f"Warning: File extension suggests '{detected_mode}' mode, "
-		      f"but you manually specified '{args.mode}'.")
+		warning_text = (
+			f"Warning: File extension suggests '{detected_mode}' mode, "
+			f"but you manually specified '{args.mode}'."
+		)
+		print(warning_text)
 
 	# Determine bltype (Upload vs Update)
 	if args.bltype:

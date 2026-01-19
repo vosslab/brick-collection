@@ -24,7 +24,7 @@ def test_make_label_includes_msrp(monkeypatch):
 	}
 	msrp_cache = {'123-1': 4999}
 	result = super_make_set_labels.makeLabel(set_dict, msrp_cache)
-	assert 'MSRP: $49.99' in result
+	assert r"MSRP: \$49.99" in result
 
 #============================
 

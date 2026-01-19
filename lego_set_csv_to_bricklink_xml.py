@@ -44,7 +44,7 @@ def main():
 		output_dir = libbrick.path_utils.get_output_dir()
 		base_name = os.path.splitext(os.path.basename(args.input_file))[0]
 		output_file = os.path.join(output_dir, base_name + '.xml')
-	
+
 	# Write set IDs to XML
 	write_xml(set_ids, output_file)
 	print(f"XML output written to {output_file}")

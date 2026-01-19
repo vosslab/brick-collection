@@ -46,8 +46,11 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			print("Error: API key file not found.")
 			exit(1)
 		self.bricklink_api = bricklink.api.BrickLinkAPI(
-		  self.api_data['consumer_key'], self.api_data['consumer_secret'],
-		  self.api_data['token_value'], self.api_data['token_secret'])
+			self.api_data['consumer_key'],
+			self.api_data['consumer_secret'],
+			self.api_data['token_value'],
+			self.api_data['token_secret'],
+		)
 		self.color_dict = None
 		self.price_count = 0
 		self.image_checks = 0
@@ -81,8 +84,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		#sys.stderr.flush()
 		self.api_log.append(url)
 		error_msg = False
-		if ( response.get('data') is None
-			 or len(response.get('data')) == 0):
+		if response.get('data') is None or len(response.get('data')) == 0:
 			error_msg = True
 		if error_msg is True:
 			self.save_cache()
@@ -764,7 +766,7 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 			'Accept-Language': 'en-US,en;q=0.5',
 		}
 		try:
-			response = requests.get(url, timeout=2, headers=headers, verify=False)
+			response = requests.get(url, timeout=2, headers=headers)
 		except requests.exceptions.ReadTimeout:
 			if verbose:
 				print("TIMEOUT")

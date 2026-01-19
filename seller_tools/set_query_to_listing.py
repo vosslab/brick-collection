@@ -65,13 +65,13 @@ def generate_description(included_or_not, percent_complete, build_status, person
         description.append(f'{percent_complete}% complete')
 
     if personal_collection:
-        description.append("📦 From personal collection, bought by me")
+        description.append("From personal collection, bought by me")
 
     if included_or_not['minifigs'] == 'none':
         description.append("set has no minifigs")
 
     # Generate list of included items
-    positive_text = "✅ "
+    positive_text = "INCLUDES: "
     for key, value in included_or_not.items():
         if value is True:
             positive_text += f"includes {key}; "
@@ -80,7 +80,7 @@ def generate_description(included_or_not, percent_complete, build_status, person
         description.append(positive_text)
 
     # Generate list of excluded items
-    negative_text = "❌ "
+    negative_text = "NO: "
     for key, value in included_or_not.items():
         if value is False:
             negative_text += f"no {key}; "

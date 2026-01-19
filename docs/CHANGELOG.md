@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-01-19
+- Replace non-ASCII symbols in inventory and seller tool text with ASCII equivalents.
+- Fix mixed indentation in set ID input and BrickLink wrapper initialization.
+- Add request timeouts for image downloads in legacy label scripts and image cache.
+- Mark md5 usage as non-security and remove SSL verify disabling in BrickLink image checks.
+- Update tests to avoid hardcoded /tmp and to expect escaped MSRP in label output.
+
 ## 2026-01-01
 - Allow set ID validation for 1000-99999 and BrickLink 910000-910999 ranges.
 - Return image paths relative to the output directory when generating label TeX files.

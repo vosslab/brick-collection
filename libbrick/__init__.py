@@ -279,10 +279,10 @@ def processSetID(setID):
 #============================
 #============================
 def user_input_set_id():
-    """Prompt the user to enter the percent complete of the set."""
-    value = input("Enter a BrickLink Set ID (e.g., 72455-1): ").strip()
-    setID = processSetID(value)
-    return setID
+	"""Prompt the user to enter a BrickLink set ID."""
+	value = input("Enter a BrickLink Set ID (e.g., 72455-1): ").strip()
+	setID = processSetID(value)
+	return setID
 
 #============================
 #============================

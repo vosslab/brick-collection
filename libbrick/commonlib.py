@@ -259,7 +259,7 @@ class CommonLib(object):
 		print(("MD5SUM "+filename))
 		f = open(filename, 'rb')
 		import hashlib
-		m = hashlib.md5()
+		m = hashlib.md5(usedforsecurity=False)
 		while True:
 			d = f.read(8096)
 			if not d:
@@ -279,7 +279,7 @@ class CommonLib(object):
 		print(("QUICK MD5 "+filename))
 		f = open(filename, 'rb')
 		import hashlib
-		m = hashlib.md5()
+		m = hashlib.md5(usedforsecurity=False)
 		for i in range(9):
 			d = f.read(8096)
 			if not d:
