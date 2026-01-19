@@ -153,7 +153,6 @@ dmypy.json
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
-*.log
 *.lot
 *.fls
 *.out
@@ -451,3 +450,8 @@ TSWLatexianTemp*
 # option is specified. Footnotes are the stored in a file with suffix Notes.bib.
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
+report_shebang.txt
+report_pyflakes.txt
+report_ascii_compliance.txt
+report_bandit.txt
+report_pyright.txt
