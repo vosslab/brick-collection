@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-01-21
+- Resolve merge conflicts in repo hygiene tests, AGENTS, and Markdown style docs.
+- Keep report outputs ignored in .gitignore after merging repo hygiene updates.
+
 ## 2026-01-19
 - Replace non-ASCII symbols in inventory and seller tool text with ASCII equivalents.
 - Fix mixed indentation in set ID input and BrickLink wrapper initialization.
