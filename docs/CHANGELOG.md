@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-02-08
+- Add `docs/REPORTLAB_LABELS_PLAN.md` with the full implementation plan for parallel ReportLab label scripts, shared geometry helpers, debug outline/calibration options, and required test coverage.
+- Add `libbrick/reportlab_label_utils.py` with Avery geometry presets, slot calculations, debug outlines, and calibration-page helpers.
+- Add `reportlab_make_set_labels.py` and `reportlab_make_minifig_labels.py` as ReportLab-based parallel label generators that keep existing `super_make_*` scripts unchanged.
+- Add tests for ReportLab geometry, label-data behavior, and PDF smoke rendering.
+- Add `reportlab` dependency and update install/usage docs for new scripts and debug flags.
+
 ## 2026-01-21
 - Resolve merge conflicts in repo hygiene tests, AGENTS, and Markdown style docs.
 - Keep report outputs ignored in .gitignore after merging repo hygiene updates.

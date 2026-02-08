@@ -6,6 +6,8 @@ brew bundle
 pip3 install -r pip_requirements.txt
 ```
 
+This installs Python dependencies including `reportlab` for the ReportLab label scripts.
+
 ## API keys
 Place API key files in the repo root.
 

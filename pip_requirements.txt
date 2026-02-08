@@ -6,4 +6,5 @@ python-bricklink-api
 pyyaml
 rebrick
 rembg[cli]
+reportlab
 requests

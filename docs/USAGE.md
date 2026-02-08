@@ -40,6 +40,12 @@ Number,Retail
 ## Label scripts
 - `super_make_minifig_labels.py`: generate minifig labels from a minifig ID list.
 - `super_make_set_labels.py`: generate set labels from a set ID list.
+- `reportlab_make_minifig_labels.py`: generate minifig labels as PDF using ReportLab (Avery 18260 layout).
+- `reportlab_make_set_labels.py`: generate set labels as PDF using ReportLab (Avery 5163 layout).
+
+### ReportLab label debug flags
+- `--draw-outlines` or `--no-draw-outlines`: enable or disable slot/content outlines (default disabled).
+- `--calibration-page` or `--no-calibration-page`: prepend or skip a calibration page (default skipped).
 
 ## Lookups and exports
 - `lookup_minifig_bricklink.py`: BrickLink minifig lookup to CSV.
