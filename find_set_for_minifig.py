@@ -2,14 +2,14 @@
 
 import os
 
-import libbrick
+import libbrick.common
 import libbrick.minifig_sets
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 if __name__ == '__main__':
-	set_list = libbrick.read_setIDs_from_file('five_days_of_sets.csv')
-	fig_list = libbrick.read_minifigIDpairs_from_file('filed.csv')
+	set_list = libbrick.common.read_setIDs_from_file('five_days_of_sets.csv')
+	fig_list = libbrick.common.read_minifigIDpairs_from_file('filed.csv')
 	#random.shuffle(fig_list)
 
 	new_pairs = []

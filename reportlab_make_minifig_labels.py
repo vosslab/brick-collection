@@ -13,7 +13,7 @@ import reportlab.pdfbase.pdfmetrics
 import reportlab.pdfgen.canvas
 
 # local repo modules
-import libbrick
+import libbrick.common
 import libbrick.image_cache
 import libbrick.path_utils
 import libbrick.reportlab_label_utils
@@ -312,7 +312,7 @@ def main() -> None:
 	)
 	libbrick.reportlab_label_utils.validate_config(config)
 
-	minifig_id_pairs = libbrick.read_minifigIDpairs_from_file(args.minifig_id_file)
+	minifig_id_pairs = libbrick.common.read_minifigIDpairs_from_file(args.minifig_id_file)
 	if not minifig_id_pairs:
 		raise ValueError("No valid minifig ID pairs found")
 

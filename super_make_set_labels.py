@@ -3,7 +3,7 @@
 import os
 import sys
 
-import libbrick
+import libbrick.common
 import libbrick.image_cache
 import libbrick.latex_utils
 import libbrick.msrp_loader
@@ -113,7 +113,7 @@ def main():
 		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
 
-	setIDs = libbrick.read_setIDs_from_file(setIDFile)
+	setIDs = libbrick.common.read_setIDs_from_file(setIDFile)
 
 	BLW = bricklink_wrapper.BrickLink()
 	RBW = rebrick_wrapper.Rebrick()

@@ -4,7 +4,7 @@ import os
 import sys
 import html
 
-import libbrick
+import libbrick.common
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
@@ -20,9 +20,9 @@ if __name__ == '__main__':
 		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
 
-	setIDs = libbrick.read_setIDs_from_file(setIDFile)
+	setIDs = libbrick.common.read_setIDs_from_file(setIDFile)
 
-	timestamp = libbrick.make_timestamp()
+	timestamp = libbrick.common.make_timestamp()
 	output_dir = libbrick.path_utils.get_output_dir()
 	csvfile = os.path.join(output_dir, "minifig_data-bricklink-{0}.csv".format(timestamp))
 	f = open(csvfile, "w")

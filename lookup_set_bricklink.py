@@ -3,7 +3,7 @@
 import os
 import sys
 
-import libbrick
+import libbrick.common
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
@@ -71,8 +71,8 @@ def main():
 		print("usage: ./lookupLego.py <csv txt file with lego IDs>")
 		sys.exit(1)
 
-	setIDs = libbrick.read_setIDs_from_file(setIDFile)
-	timestamp = libbrick.make_timestamp()
+	setIDs = libbrick.common.read_setIDs_from_file(setIDFile)
+	timestamp = libbrick.common.make_timestamp()
 
 	output_dir = libbrick.path_utils.get_output_dir(subdir='lookup')
 	csvfile = os.path.join(output_dir, f"set_data-bricklink-{timestamp}.csv")

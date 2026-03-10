@@ -9,7 +9,7 @@ import os
 import yaml
 
 # local repo modules
-import libbrick
+import libbrick.common
 import libbrick.msrp_loader
 import libbrick.path_utils
 
@@ -154,7 +154,7 @@ def update_msrp_cache(csv_path: str, cache_path: str, assume_cents: bool,
 		if number_key is None or retail_key is None:
 			skipped += 1
 			continue
-		set_id = libbrick.processSetID(row.get(number_key))
+		set_id = libbrick.common.processSetID(row.get(number_key))
 		if set_id is None:
 			print(f"Skipping invalid set ID: {row.get(number_key)}")
 			skipped += 1

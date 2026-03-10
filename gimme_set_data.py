@@ -6,7 +6,7 @@ import sys
 import argparse
 
 # Local Repo Modules
-import libbrick
+import libbrick.common
 import libbrick.path_utils
 import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
 import libbrick.wrappers.brickset_wrapper as brickset_wrapper
@@ -34,23 +34,23 @@ def getAllData(setID: str, rbw, bsw, blw) -> dict:
 	# Get data from 'rbw' source, prefix keys with 'rb_', and merge into the data dictionary
 	rbw_data = rbw.getSetDataDirect(setID)
 	if rbw_data is not None:
-		rbw_prefixed_data = libbrick.add_prefix_to_dict_keys(rbw_data, 'rb_')
+		rbw_prefixed_data = libbrick.common.add_prefix_to_dict_keys(rbw_data, 'rb_')
 		data |= rbw_prefixed_data
 
 	# Get data from 'bsw' source, prefix keys with 'bs_', and merge into the data dictionary
 	bsw_data = bsw.getSetDataDirect(setID)
 	if bsw_data is not None:
-		bsw_prefixed_data = libbrick.add_prefix_to_dict_keys(bsw_data, 'bs_')
+		bsw_prefixed_data = libbrick.common.add_prefix_to_dict_keys(bsw_data, 'bs_')
 		data |= bsw_prefixed_data
 
 	# Get data from 'blw' source, prefix keys with 'bl_', and merge into the data dictionary
 	blw_data = blw.getSetDataDirect(setID)
-	blw_prefixed_data = libbrick.add_prefix_to_dict_keys(blw_data, 'bl_')
+	blw_prefixed_data = libbrick.common.add_prefix_to_dict_keys(blw_data, 'bl_')
 	data |= blw_prefixed_data
 
 	# Get price data from 'blw' source, prefix keys with 'bl_', and merge into the data dictionary
 	blw_price_data = blw.getSetPriceData(setID)
-	blw_price_prefixed_data = libbrick.add_prefix_to_dict_keys(blw_price_data, 'bl_')
+	blw_price_prefixed_data = libbrick.common.add_prefix_to_dict_keys(blw_price_data, 'bl_')
 	data |= blw_price_prefixed_data
 
 	# Add the MSRP from 'bsw' source directly to the data dictionary
@@ -59,7 +59,7 @@ def getAllData(setID: str, rbw, bsw, blw) -> dict:
 
 	data['bl_num_minifigs'] = len(blw.getMinifigIDsFromSet(setID, verbose=False))
 
-	libbrick.process_data(data)
+	libbrick.common.process_data(data)
 
 	return data
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 			sys.exit(1)
 
 		# Read set IDs from the file
-		setIDs = libbrick.read_setIDs_from_file(args.csvfile)
+		setIDs = libbrick.common.read_setIDs_from_file(args.csvfile)
 
 	elif args.legoid:
 		# Convert the LEGO ID to a setID string format and add it to the list
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
 	#============================
 	#============================
-	timestamp = libbrick.make_timestamp()
+	timestamp = libbrick.common.make_timestamp()
 	output_dir = libbrick.path_utils.get_output_dir()
 	csvfile = os.path.join(output_dir, f"set_data-gimme-{timestamp}.csv")
 
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
 	#============================
 	#============================
-	libbrick.write_data_to_csv(data_tree, csvfile)
+	libbrick.common.write_data_to_csv(data_tree, csvfile)
 
 	#============================
 	#============================

@@ -9,7 +9,7 @@ parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.append(parent_dir)
 
 # Import custom module from parent directory
-import libbrick
+import libbrick.common
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 def ask_yes_no(question, default="no"):
@@ -114,7 +114,7 @@ def main():
     }
 
     # Gather information
-    setID = libbrick.user_input_set_id()
+    setID = libbrick.common.user_input_set_id()
     print(f"Set ID: {setID}")
     BLW = bricklink_wrapper.BrickLink()
 

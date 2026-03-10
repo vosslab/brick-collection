@@ -10,7 +10,7 @@ import reportlab.pdfbase.pdfmetrics
 import reportlab.pdfgen.canvas
 
 # local repo modules
-import libbrick
+import libbrick.common
 import libbrick.image_cache
 import libbrick.msrp_loader
 import libbrick.path_utils
@@ -229,7 +229,7 @@ def main() -> None:
 	)
 	libbrick.reportlab_label_utils.validate_config(config)
 
-	set_ids = libbrick.read_setIDs_from_file(args.set_id_file)
+	set_ids = libbrick.common.read_setIDs_from_file(args.set_id_file)
 	if not set_ids:
 		raise ValueError("No valid set IDs found")
 

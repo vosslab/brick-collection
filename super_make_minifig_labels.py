@@ -6,7 +6,7 @@ import sys
 import time
 import random
 
-import libbrick
+import libbrick.common
 import libbrick.image_cache
 import libbrick.latex_utils
 import libbrick.path_utils
@@ -223,7 +223,7 @@ def main() -> None:
 		sys.exit(1)
 
 	# Read minifigure ID pairs from the input file
-	minifigIDpairs = libbrick.read_minifigIDpairs_from_file(minifigIDFile)
+	minifigIDpairs = libbrick.common.read_minifigIDpairs_from_file(minifigIDFile)
 
 	# Initialize the BrickLink wrapper
 	BLW = bricklink_wrapper.BrickLink()

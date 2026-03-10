@@ -6,7 +6,7 @@ import time
 import random
 import argparse
 
-import libbrick
+import libbrick.common
 import libbrick.path_utils
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
 	BLW = bricklink_wrapper.BrickLink()
 	sys.stderr.write(".")
-	timestamp = libbrick.make_timestamp()
+	timestamp = libbrick.common.make_timestamp()
 	output_dir = libbrick.path_utils.get_output_dir(subdir='print_out')
 	csvfile = os.path.join(output_dir, "element_price_data-bricklink-{0}.csv".format(timestamp))
 	f = open(csvfile, "w")

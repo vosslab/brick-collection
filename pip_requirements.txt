@@ -9,5 +9,5 @@ rebrick
 rembg[cli]
 reportlab
 requests
-rich
+textual
 urllib3

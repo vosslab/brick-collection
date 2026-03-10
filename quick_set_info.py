@@ -8,7 +8,7 @@ import time
 import argparse
 
 # Local Repo Modules
-import libbrick
+import libbrick.common
 import libbrick.path_utils
 import libbrick.wrappers.rebrick_wrapper as rebrick_wrapper
 import libbrick.wrappers.brickset_wrapper as brickset_wrapper
@@ -50,22 +50,22 @@ def getAllData(setID: str, rbw, bsw, blw) -> dict:
 	# Get data from 'rbw' source and prefix keys with 'rb_'
 	rbw_data = rbw.getSetDataDirect(setID)
 	if rbw_data is not None:
-		data |= libbrick.add_prefix_to_dict_keys(rbw_data, 'rb_')
+		data |= libbrick.common.add_prefix_to_dict_keys(rbw_data, 'rb_')
 
 	# Get data from 'blw' source and prefix keys with 'bl_'
 	blw_data = blw.getSetDataDirect(setID)
-	data |= libbrick.add_prefix_to_dict_keys(blw_data, 'bl_')
+	data |= libbrick.common.add_prefix_to_dict_keys(blw_data, 'bl_')
 
 	# Get price data from 'blw' source and prefix keys with 'bl_'
 	blw_price_data = blw.getSetPriceData(setID)
-	data |= libbrick.add_prefix_to_dict_keys(blw_price_data, 'bl_')
+	data |= libbrick.common.add_prefix_to_dict_keys(blw_price_data, 'bl_')
 
 	# Add the MSRP from 'bsw' source directly to the data dictionary
 	data['msrp'] = bsw.getSetMSRP(setID)
 
 	data['bl_num_minifigs'] = len(blw.getMinifigIDsFromSet(setID, verbose=True))
 
-	libbrick.process_data(data)
+	libbrick.common.process_data(data)
 
 	return data
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
 			sys.exit(1)
 
 		# Read set IDs from the file
-		setIDs = libbrick.read_setIDs_from_file(args.csvfile)
+		setIDs = libbrick.common.read_setIDs_from_file(args.csvfile)
 
 	elif args.legoid:
 		# Convert the LEGO ID to a setID string format and add it to the list
@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
 	#============================
 	#============================
-	timestamp = libbrick.make_timestamp()
+	timestamp = libbrick.common.make_timestamp()
 	output_dir = libbrick.path_utils.get_output_dir()
 	csvfile = os.path.join(output_dir, f"quick_set_info-{timestamp}.csv")
 
@@ -278,7 +278,7 @@ if __name__ == '__main__':
 
 	#============================
 	#============================
-	libbrick.write_data_to_csv(data_tree, csvfile, key_order)
+	libbrick.common.write_data_to_csv(data_tree, csvfile, key_order)
 
 	#============================
 	#============================

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-10
+
+### Additions and New Features
+- Add `libbrick/common.py` with all shared utility functions moved from `libbrick/__init__.py`.
+- Add `libbrick/tui.py` with a reusable `TaskRunnerApp` base class for Textual TUI interfaces, plus `add_tui_args()` and `should_use_tui()` helpers.
+- Add Textual TUI mode to `price_out_parts_in_set.py` with `--tui`/`--cli` flags and a `PartsInSetApp` subclass showing part pricing progress in a dashboard.
+
+### Behavior or Interface Changes
+- Replace `libbrick/__init__.py` with a docstring-only file to comply with the empty `__init__.py` convention enforced by `tests/test_init_files.py`.
+- Update all 15+ caller scripts to use `libbrick.common.X()` instead of `libbrick.X()`.
+- `price_out_parts_in_set.py` now defaults to TUI mode when Textual is available and stdout is a TTY; use `--cli` to force plain output.
+- Rename shuffle flag from `-X` to `-S` in `price_out_parts_in_set.py`.
+- Add `--limit-parts N` / `-L N` flag to `price_out_parts_in_set.py` for testing with a subset of parts.
+
+### Fixes and Maintenance
+- Remove unreachable dead code at end of `read_minifigIDpairs_from_file()` in the moved common module.
+- Extract `parse_args()`, `clean_data_for_export()`, and `run_cli()` helper functions in `price_out_parts_in_set.py` for cleaner TUI/CLI mode switching.
+- Fix `WorkerCancelled` crash in TUI mode by using `asyncio.to_thread` instead of Textual workers for inner task threads, and moving all widget updates out of `process_task` into the async `run_tasks` method. The root cause was accessing Textual widgets from a background thread.
+
 ## 2026-02-08
 - Add `docs/REPORTLAB_LABELS_PLAN.md` with the full implementation plan for parallel ReportLab label scripts, shared geometry helpers, debug outline/calibration options, and required test coverage.
 - Add `libbrick/reportlab_label_utils.py` with Avery geometry presets, slot calculations, debug outlines, and calibration-page helpers.

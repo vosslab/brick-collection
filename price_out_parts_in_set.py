@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Import necessary modules
+# Standard Library
 import os
 import csv
 import sys
@@ -8,9 +8,10 @@ import time
 import random
 import argparse
 
-# Modules related to Lego functionality
-import libbrick
+# local repo modules
+import libbrick.common
 import libbrick.path_utils
+import libbrick.tui
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
 
 FAVORITE_COLUMNS = [
@@ -140,13 +141,46 @@ def process_row(data, allkeys):
 	return row
 
 
-def main():
+#=====================
+def clean_data_for_export(data: dict) -> dict:
 	"""
-	Main function to execute the script logic.
-	"""
-	# Set up the argument parser
-	parser = argparse.ArgumentParser(description='Find Price for All Parts in a Set')
+	Remove unused/legacy fields from data before CSV export.
 
+	Args:
+		data (dict): The raw data dictionary.
+
+	Returns:
+		dict: The cleaned data dictionary.
+	"""
+	data.pop('image_url', None)
+	data.pop('thumbnail_url', None)
+	# Remove all used_ prefix keys
+	for key in list(data.keys()):
+		if key.startswith('used_'):
+			data.pop(key, None)
+	return data
+
+
+#=====================
+def write_csv_row(writer, data: dict, allkeys: list) -> None:
+	"""
+	Write a single data row to the CSV writer.
+
+	Args:
+		writer: csv.writer object.
+		data (dict): The data dictionary for this row.
+		allkeys (list): Column key ordering.
+	"""
+	row = process_row(data, allkeys)
+	writer.writerow(row)
+
+
+#=====================
+def parse_args() -> argparse.Namespace:
+	"""
+	Parse command-line arguments.
+	"""
+	parser = argparse.ArgumentParser(description='Find Price for All Parts in a Set')
 	# Two arguments: Lego ID or Set ID
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument('-l', '--legoid', dest='legoid', metavar='#', type=int,
@@ -155,28 +189,118 @@ def main():
 		help='a string for the Set ID, e.g. 11011-1')
 	parser.add_argument('-d', '--debug', dest='debug', action='store_true',
 		help='enable debugging mode')
-	#parser.set_defaults('debug', False)
-	parser.add_argument('-X', '--shuffle', dest='shuffle', action='store_true',
-		help='shuffle entres')
-	#parser.set_defaults('shuffle', False)
+	parser.add_argument('-S', '--shuffle', dest='shuffle', action='store_true',
+		help='shuffle entries')
+	parser.add_argument('-L', '--limit-parts', dest='limit_parts', metavar='N',
+		type=int, default=None,
+		help='only process the first N parts then exit')
+	# Add TUI/CLI mode flags
+	libbrick.tui.add_tui_args(parser)
 	args = parser.parse_args()
+	return args
 
-	setID = get_set_id_from_args(args, parser)
-	legoid = int(setID.split('-')[0])
 
-	# Initialize the BrickLink wrapper and fetch data
-	BLW = bricklink_wrapper.BrickLink()
-	set_data = BLW.getSetData(setID)
-	parts_tree = BLW.getPartsFromSet(setID)
-	print('\nFound {0} unique parts in set {1} {2}'.format(len(parts_tree), setID, set_data['name']))
-	if args.shuffle is True:
-		random.shuffle(parts_tree)
+if libbrick.tui.TEXTUAL_AVAILABLE:
+	#=====================
+	class PartsInSetApp(libbrick.tui.TaskRunnerApp):
+		"""Textual TUI for pricing out parts in a LEGO set."""
 
-	# Prepare the CSV file for data writing
-	timestamp = libbrick.make_timestamp()
-	output_dir = libbrick.path_utils.get_output_dir(subdir='print_out')
-	csvfile = os.path.join(output_dir, "part_data_for_{0}-bricklink-{1}.csv".format(legoid, timestamp))
+		def __init__(
+			self, tasks: list, args: argparse.Namespace,
+			BLW, setID: str, set_data: dict, csvfile: str,
+		) -> None:
+			title = f"Parts in Set {setID} - {set_data.get('name', '')}"
+			super().__init__(tasks, title=title)
+			self.args = args
+			self.BLW = BLW
+			self.setID = setID
+			self.set_data = set_data
+			self.csvfile = csvfile
+			self.allkeys = None
+			self.csv_file_handle = None
+			self.csv_writer = None
 
+		def get_columns(self) -> list:
+			"""Return column definitions for the parts table."""
+			columns = [
+				("item_id", "item_id"),
+				("color", "color"),
+				("sale_price", "sale price"),
+				("lot_value", "lot value"),
+				("name", "name", 40),
+			]
+			return columns
+
+		def get_row_label(self, task) -> str:
+			"""Return a display label for a part row."""
+			entries = task.get('entries', [])
+			if entries:
+				item = entries[0].get('item', {})
+				item_id = item.get('no', '???')
+				return str(item_id)
+			return "???"
+
+		def on_mount(self) -> None:
+			"""Open CSV file and start tasks."""
+			self.csv_file_handle = open(self.csvfile, 'w', newline='')
+			self.csv_writer = csv.writer(self.csv_file_handle, delimiter='\t')
+			super().on_mount()
+
+		def process_task(self, task) -> tuple:
+			"""Collect data for a part and write to CSV.
+
+			Returns:
+				tuple: (ok, summary, column_updates) - do NOT touch widgets here.
+			"""
+			data = collect_data_for_part(task, self.BLW, self.args)
+			data = clean_data_for_export(data)
+			# Initialize column headers on first task
+			if self.allkeys is None:
+				datakeys = sorted(data.keys())
+				self.allkeys = FAVORITE_COLUMNS + [
+					key for key in datakeys if key not in FAVORITE_COLUMNS
+				]
+				self.csv_writer.writerow(self.allkeys)
+			# Write data row to CSV
+			write_csv_row(self.csv_writer, data, self.allkeys)
+			# Build summary and column update values
+			item_id = data.get('no', '???')
+			color_name = str(data.get('color_name', ''))[:20]
+			name = str(data.get('name', ''))[:60]
+			sale_price = data.get('sale price', 0)
+			lot_value = data.get('lot value', 0)
+			sale_text = f"${sale_price:.2f}" if isinstance(sale_price, (int, float)) else str(sale_price)
+			lot_text = f"${lot_value:.2f}" if isinstance(lot_value, (int, float)) else str(lot_value)
+			# Return column updates dict for the base class to apply
+			column_updates = {
+				"item_id": str(item_id),
+				"color": color_name,
+				"name": name,
+				"sale_price": sale_text,
+				"lot_value": lot_text,
+			}
+			summary = f"{item_id} {color_name} {name} sale={sale_text} lot={lot_text}"
+			return True, summary, column_updates
+
+		def cleanup(self) -> None:
+			"""Close CSV file and BrickLink wrapper."""
+			if self.csv_file_handle is not None:
+				self.csv_file_handle.close()
+				self.csv_file_handle = None
+			self.BLW.close()
+
+
+#=====================
+def run_cli(parts_tree: list, args, BLW, csvfile: str) -> None:
+	"""
+	Run the plain CLI sequential processing mode.
+
+	Args:
+		parts_tree (list): List of part dictionaries.
+		args: Parsed command-line arguments.
+		BLW: BrickLink wrapper instance.
+		csvfile (str): Output CSV file path.
+	"""
 	with open(csvfile, 'w', newline='') as file:
 		writer = csv.writer(file, delimiter='\t')
 		allkeys = None
@@ -187,27 +311,57 @@ def main():
 			remaining = total_parts - count
 			print(f"\n   PART {count} of {total_parts} ({remaining} remaining)")
 			data = collect_data_for_part(part_dict, BLW, args)
-
-			# Remove unused/legacy fields we no longer want to export
-			data.pop('image_url', None)
-			data.pop('thumbnail_url', None)
-			for key in list(data.keys()):
-				if key.startswith('used_'):
-					data.pop(key, None)
-
+			data = clean_data_for_export(data)
 			# Setting the columns order and writing headers
 			if allkeys is None:
-				datakeys = list(data.keys())
-				datakeys.sort()
-				allkeys = FAVORITE_COLUMNS + [key for key in datakeys if key not in FAVORITE_COLUMNS]
+				datakeys = sorted(data.keys())
+				allkeys = FAVORITE_COLUMNS + [
+					key for key in datakeys if key not in FAVORITE_COLUMNS
+				]
 				writer.writerow(allkeys)
 			# Process and write data to CSV
-			row = process_row(data, allkeys)
-			writer.writerow(row)
-
+			write_csv_row(writer, data, allkeys)
 	BLW.close()
 	print("\ncommand to open file using Finder in macos")
-	print('open '+csvfile)
+	print('open ' + csvfile)
+
+
+#=====================
+def main():
+	"""
+	Main function to execute the script logic.
+	"""
+	args = parse_args()
+	# Build a temporary parser for get_set_id_from_args error handling
+	parser = argparse.ArgumentParser()
+	setID = get_set_id_from_args(args, parser)
+	legoid = int(setID.split('-')[0])
+
+	# Initialize the BrickLink wrapper and fetch data
+	BLW = bricklink_wrapper.BrickLink()
+	set_data = BLW.getSetData(setID)
+	parts_tree = BLW.getPartsFromSet(setID)
+	print(f"\nFound {len(parts_tree)} unique parts in set {setID} {set_data['name']}")
+	if args.shuffle is True:
+		random.shuffle(parts_tree)
+	# Limit parts for testing
+	if args.limit_parts is not None:
+		parts_tree = parts_tree[:args.limit_parts]
+		print(f"Limiting to {len(parts_tree)} parts")
+
+	# Prepare the CSV file for data writing
+	timestamp = libbrick.common.make_timestamp()
+	output_dir = libbrick.path_utils.get_output_dir(subdir='print_out')
+	csvfile = os.path.join(output_dir, f"part_data_for_{legoid}-bricklink-{timestamp}.csv")
+
+	# Choose TUI or CLI mode
+	if libbrick.tui.should_use_tui(args):
+		app = PartsInSetApp(parts_tree, args, BLW, setID, set_data, csvfile)
+		app.run()
+		# Cleanup after TUI exits
+		app.cleanup()
+	else:
+		run_cli(parts_tree, args, BLW, csvfile)
 
 if __name__ == '__main__':
 	main()
