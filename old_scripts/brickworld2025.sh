@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for setID in 10342 10345 10347 31158 42669 43217 60419 76967 10342 10359 11040 21355 31169 31213 76780
+do
+    ./priceOutPartsInSet.py -l "$setID"
+done

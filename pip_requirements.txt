@@ -8,3 +8,4 @@ rebrick
 rembg[cli]
 reportlab
 requests
+rich

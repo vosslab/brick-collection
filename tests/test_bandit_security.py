@@ -6,7 +6,7 @@ import git_file_utils
 
 
 SKIP_ENV = "SKIP_REPO_HYGIENE"
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+REPO_ROOT = git_file_utils.get_repo_root()
 SKIP_DIRS = [".git", ".venv", "old_shell_folder"]
 
 
@@ -57,11 +57,8 @@ def run_bandit(repo_root: str) -> tuple[int, str]:
 		bandit_bin,
 		"--severity-level",
 		"medium",
-<<<<<<< HEAD
-=======
 		"--confidence-level",
 		"medium",
->>>>>>> d17b80d645806b5fd650b30b60b4a384f6212e44
 	] + files
 	result = subprocess.run(
 		command,
