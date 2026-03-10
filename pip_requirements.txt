@@ -1,4 +1,5 @@
 brickse
+bricklink
 lxml
 pillow
 pytest
@@ -9,3 +10,4 @@ rembg[cli]
 reportlab
 requests
 rich
+urllib3
