@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-03-29
+
+### Fixes and Maintenance
+- Rewrite `README.md` to match repo conventions: short overview, quick start, curated doc links, maintainer social link.
+
 ## 2026-03-10
 
 ### Additions and New Features
