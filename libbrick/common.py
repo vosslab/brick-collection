@@ -9,6 +9,52 @@ from collections.abc import MutableMapping
 
 #============================
 #============================
+def format_duration(seconds: float) -> str:
+	"""
+	Format a duration in seconds as a compact, human-readable string.
+
+	Tiered output:
+		>= 3600s: "{H}h{MM}m"  (e.g., "3h22m")
+		>= 60s:   "{M}m{SS}s"  (e.g., "22m05s")
+		< 60s:    "{S}s"       (e.g., "43s")
+
+	Negative inputs are clamped to zero.
+
+	Args:
+		seconds (float): Duration in seconds.
+
+	Returns:
+		str: Formatted duration string.
+	"""
+	# Clamp negatives to zero
+	if seconds < 0:
+		seconds = 0.0
+	total = int(seconds)
+	if total >= 3600:
+		hours = total // 3600
+		mins = (total % 3600) // 60
+		return f"{hours}h{mins:02d}m"
+	if total >= 60:
+		mins = total // 60
+		secs = total % 60
+		return f"{mins}m{secs:02d}s"
+	return f"{total}s"
+
+
+# Asserts: pivot points for format_duration
+assert format_duration(0) == "0s"
+assert format_duration(43) == "43s"
+assert format_duration(59) == "59s"
+assert format_duration(60) == "1m00s"
+assert format_duration(1325) == "22m05s"
+assert format_duration(3599) == "59m59s"
+assert format_duration(3600) == "1h00m"
+assert format_duration(12120) == "3h22m"
+assert format_duration(-5) == "0s"
+
+
+#============================
+#============================
 def add_prefix_to_dict_keys(original_dict: dict, prefix: str) -> dict:
 	"""
 	Adds a prefix to all keys in the provided dictionary.

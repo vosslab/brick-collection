@@ -219,6 +219,11 @@ if libbrick.tui.TEXTUAL_AVAILABLE:
 			self.allkeys = None
 			self.csv_file_handle = None
 			self.csv_writer = None
+			self.total_value = 0.0
+
+		def get_extra_metrics(self) -> str:
+			"""Return the running lot-value total for the metrics panel."""
+			return f"Total: ${self.total_value:,.2f}"
 
 		def get_columns(self) -> list:
 			"""Return column definitions for the parts table."""
@@ -271,6 +276,9 @@ if libbrick.tui.TEXTUAL_AVAILABLE:
 			lot_value = data.get('lot value', 0)
 			sale_text = f"${sale_price:.2f}" if isinstance(sale_price, (int, float)) else str(sale_price)
 			lot_text = f"${lot_value:.2f}" if isinstance(lot_value, (int, float)) else str(lot_value)
+			# Accumulate running total for the metrics panel
+			if isinstance(lot_value, (int, float)):
+				self.total_value += float(lot_value)
 			# Return column updates dict for the base class to apply
 			column_updates = {
 				"item_id": str(item_id),

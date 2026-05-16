@@ -5,6 +5,8 @@ import time
 import asyncio
 import argparse
 
+import libbrick.common
+
 try:
 	# PIP3 modules
 	from rich.text import Text
@@ -189,19 +191,42 @@ if TEXTUAL_AVAILABLE:
 			log_widget = self.query_one(RichLog)
 			log_widget.write(message)
 
+		def get_extra_metrics(self) -> str:
+			"""
+			Return extra metrics text appended to the panel.
+
+			Subclasses may override to inject script-specific lines
+			(e.g., a running dollar total). Default is empty.
+			"""
+			return ""
+
 		def update_metrics(self) -> None:
 			"""Update the metrics panel with progress, elapsed, and ETA."""
 			elapsed = time.time() - self.start_time
-			if self.completed > 0:
-				avg = sum(self.durations) / self.completed
+			# Exclude cached lookups (< 1s) from ETA averaging so that fast
+			# cache hits do not skew the estimate for slow API-bound tasks.
+			slow = [d for d in self.durations if d >= 1.0]
+			if slow:
+				avg = sum(slow) / len(slow)
 				eta = avg * (self.total - self.completed)
+				avg_text = f"{avg:.1f}s"
+			elif self.completed > 0:
+				# Only cached tasks seen so far; we cannot estimate API cost
+				avg = sum(self.durations) / self.completed
+				eta = 0.0
+				avg_text = f"{avg:.1f}s (cached)"
 			else:
 				eta = 0.0
+				avg_text = "--"
 			metrics = (
 				f"Completed: {self.completed}/{self.total}\n"
-				f"Elapsed: {elapsed:.1f}s\n"
-				f"ETA: {eta:.1f}s"
+				f"Elapsed: {libbrick.common.format_duration(elapsed)}\n"
+				f"ETA: {libbrick.common.format_duration(eta)}\n"
+				f"Sec/part: {avg_text}"
 			)
+			extra = self.get_extra_metrics()
+			if extra:
+				metrics += "\n" + extra
 			self.query_one("#metrics", Static).update(metrics)
 
 		def update_row_column(self, idx: int, column_key: str, value) -> None:

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-05-16
+
+### Additions and New Features
+- Add `format_duration()` helper in `libbrick/common.py` rendering seconds as tiered `Hh MMm` / `Mm SSs` / `Ss` strings, with inline asserts at known pivots.
+- Add `get_extra_metrics()` hook on `libbrick.tui.TaskRunnerApp` so subclasses can append script-specific lines (e.g., running totals) to the metrics panel.
+- `price_out_parts_in_set.py` now tracks a running lot-value `Total: $X.XX` and displays it in the TUI metrics panel.
+
+### Behavior or Interface Changes
+- TUI metrics panel (`libbrick/tui.py update_metrics`) now shows `Elapsed` and `ETA` in human-readable form via `format_duration`, and adds a `Sec/part` line showing average per-task duration.
+- ETA averaging in `libbrick/tui.py update_metrics` now excludes durations under 1 second, so cache hits do not deflate the estimate for slow API-bound tasks; when only cached tasks have completed, ETA is held at 0 and `Sec/part` is marked `(cached)`.
+
 ## 2026-03-29
 
 ### Fixes and Maintenance
