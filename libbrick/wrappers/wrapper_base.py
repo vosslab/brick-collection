@@ -13,6 +13,25 @@ import yaml
 # local repo modules
 import libbrick.path_utils
 
+
+# ANSI color codes used to subdue routine cache chatter on a TTY.
+# Bright-black (gray) keeps the text legible but pushes it to the background.
+_DIM = '\033[90m'
+_RESET = '\033[0m'
+
+
+def _subdued(text: str) -> str:
+	"""
+	Wrap text in ANSI gray codes when writing to a real terminal.
+
+	On a non-TTY stdout (pipe, file redirect), return the plain text so the
+	output stays clean for downstream tools.
+	"""
+	if sys.stdout.isatty():
+		return _DIM + text + _RESET
+	return text
+
+
 class BaseWrapperClass(object):
 	"""
 	Base wrapper class to manage caching and API interactions.
@@ -65,7 +84,7 @@ class BaseWrapperClass(object):
 		"""
 		Load cache data from files.
 		"""
-		print('==== LOAD CACHE ====')
+		print(_subdued('==== LOAD CACHE ===='))
 		git_root = libbrick.path_utils.get_git_root()
 		if git_root is None:
 			cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
@@ -87,14 +106,14 @@ class BaseWrapperClass(object):
 					else:
 						print("UNKNOWN CACHE FORMAT: ", cache_format)
 						sys.exit(1)
-					print('.. loaded {0} entries from {1} in {2:,d} usec'.format(
-						len(cache_data), file_name, int((time.time() - t0) * 1e6)))
+					print(_subdued('.. loaded {0} entries from {1} in {2:,d} usec'.format(
+						len(cache_data), file_name, int((time.time() - t0) * 1e6))))
 				except IOError:
 					cache_data = {}
 			else:
 				cache_data = {}
 			setattr(self, cache_name, cache_data)
-		print('==== END CACHE ====')
+		print(_subdued('==== END CACHE ===='))
 
 	#============================
 	#============================
@@ -116,7 +135,7 @@ class BaseWrapperClass(object):
 		Args:
 			single_cache_name: Optional; name of a single cache to save.
 		"""
-		print('==== SAVE CACHE ====')
+		print(_subdued('==== SAVE CACHE ===='))
 		git_root = libbrick.path_utils.get_git_root()
 		if git_root is None:
 			cache_path = os.path.join(os.path.dirname(__file__), "CACHE")
@@ -142,9 +161,9 @@ class BaseWrapperClass(object):
 					else:
 						print("UNKNOWN CACHE FORMAT: ", cache_format)
 						sys.exit(1)
-				print('.. wrote {0} entries to {1} in {2:,d} usec'.format(
-					len(cache_data), file_name, int((time.time() - t0) * 1e6)))
-		print('==== END CACHE ====')
+				print(_subdued('.. wrote {0} entries to {1} in {2:,d} usec'.format(
+					len(cache_data), file_name, int((time.time() - t0) * 1e6))))
+		print(_subdued('==== END CACHE ===='))
 
 	#============================
 	#============================

@@ -90,6 +90,7 @@ if TEXTUAL_AVAILABLE:
 			self.total = len(tasks)
 			self.start_time = time.time()
 			self.completed = 0
+			self.failed = 0
 			self.durations = []
 			self.log_lines = []
 			self.task_rows = []
@@ -256,6 +257,8 @@ if TEXTUAL_AVAILABLE:
 						self.update_row_column(idx, col_key, col_value)
 				# Update row status and time
 				status = "ok" if ok else "failed"
+				if not ok:
+					self.failed += 1
 				self.update_row_column(idx, "status", self.format_status(status))
 				self.update_row_column(idx, "sec", f"{duration:.1f}")
 				# Log the result
@@ -267,6 +270,25 @@ if TEXTUAL_AVAILABLE:
 					self.append_log(summary[:2000])
 				self.update_metrics()
 			self.append_log("All tasks completed.")
+			self.mark_finished()
+
+		def mark_finished(self) -> None:
+			"""Highlight the metrics panel when all tasks are done."""
+			# Green border + banner on success, red on any failure
+			if self.failed > 0:
+				color = "red"
+				banner = f"FAILED ({self.failed}/{self.total} errors)"
+			else:
+				color = "green"
+				banner = "DONE"
+			metrics_box = self.query_one("#metrics_box")
+			metrics_box.styles.border = ("heavy", color)
+			footer = self.query_one("#footer_note", Static)
+			footer.update(Text(f"{banner} - press q to quit", style=f"bold {color}"))
+			title_widget = self.query_one("#metrics_title", Static)
+			title_widget.update(
+				Text(f"{banner}: {self.app_title}", style=f"bold {color}")
+			)
 
 		def on_key(self, event) -> None:
 			"""Handle key presses."""

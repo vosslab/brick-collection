@@ -66,10 +66,16 @@ def collect_data_for_part(part_dict, BLW, args):
 
 		# partIDandColorIDtoElementID already picks an element ID with a valid image
 		element_id = data.get('element id')
-		data['element_image_url'] = (
-			f"https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{element_id}.jpg"
-			if element_id is not None else ''
-		)
+		if element_id is not None:
+			data['element_image_url'] = (
+				f"https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{element_id}.jpg"
+			)
+			data['rebrickable_image_url'] = (
+				f"https://cdn.rebrickable.com/media/thumbs/parts/elements/{element_id}.jpg/250x250p.jpg"
+			)
+		else:
+			data['element_image_url'] = ''
+			data['rebrickable_image_url'] = ''
 
 		if args.debug:
 			print(price_data)
@@ -119,8 +125,9 @@ def process_value(value):
 		value = value.replace('\t', ' ')
 		value = value.replace(',', ' ')
 		value = value.replace('  ', ' ')
-		# Truncating string if longer than 70 characters
-		value = value[:70]
+		# Truncating string if longer than 70 characters; do not truncate URLs
+		if not value.startswith(('http://', 'https://')):
+			value = value[:70]
 	elif isinstance(value, float):
 		# Format the float to limit to 3 decimal places
 		value = "{:.3f}".format(value)
@@ -330,8 +337,6 @@ def run_cli(parts_tree: list, args, BLW, csvfile: str) -> None:
 			# Process and write data to CSV
 			write_csv_row(writer, data, allkeys)
 	BLW.close()
-	print("\ncommand to open file using Finder in macos")
-	print('open ' + csvfile)
 
 
 #=====================
@@ -370,6 +375,11 @@ def main():
 		app.cleanup()
 	else:
 		run_cli(parts_tree, args, BLW, csvfile)
+
+	# Always report the output path so the user can find it
+	print()
+	print(f"Wrote output to: {csvfile}")
+	print(f"  open {csvfile}")
 
 if __name__ == '__main__':
 	main()

@@ -1,6 +1,13 @@
 # Ignore JPEG files that were downloaded
 *.jpg
 *.ods
+API_KEYS
+CACHE
+images/
+bricklink_api_private.yml
+bricklink-api.txt
+brickset_api_private.yml
+rebrick_api_key.yml
 
 # Ignore YAML files used for config and cache
 *.yml

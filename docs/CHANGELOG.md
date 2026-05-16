@@ -10,6 +10,13 @@
 ### Behavior or Interface Changes
 - TUI metrics panel (`libbrick/tui.py update_metrics`) now shows `Elapsed` and `ETA` in human-readable form via `format_duration`, and adds a `Sec/part` line showing average per-task duration.
 - ETA averaging in `libbrick/tui.py update_metrics` now excludes durations under 1 second, so cache hits do not deflate the estimate for slow API-bound tasks; when only cached tasks have completed, ETA is held at 0 and `Sec/part` is marked `(cached)`.
+- `price_out_parts_in_set.py` `process_value()` no longer truncates strings that start with `http://` or `https://`, so the full LEGO and Rebrickable image URLs survive in the CSV output (previously the 70-char cap chopped off the element ID).
+
+### Fixes and Maintenance
+- `price_out_parts_in_set.py` now also writes a `rebrickable_image_url` column built from the element ID (`https://cdn.rebrickable.com/media/thumbs/parts/elements/<element_id>.jpg/250x250p.jpg`) alongside the existing `element_image_url`.
+- `libbrick/tui.py` `TaskRunnerApp` now flips the metrics panel border, title, and footer note to bold green `DONE` when all tasks finish successfully (or bold red `FAILED (N/M errors)` if any task failed) so completion is obvious at a glance.
+- `price_out_parts_in_set.py` always prints the output CSV path (with a ready-to-run `open` command) after the run finishes, in both TUI and CLI modes; the duplicate print previously emitted by `run_cli()` has been removed.
+- `libbrick/wrappers/wrapper_base.py` now prints the `==== LOAD/SAVE CACHE ====` banners and the per-file `.. loaded/wrote ...` lines in subdued ANSI gray (bright black) when stdout is a TTY, so routine cache chatter recedes against more important output. When stdout is not a TTY (pipe or file redirect), the messages are emitted plain so downstream tools do not see escape codes.
 
 ## 2026-03-29
 
