@@ -1,4 +1,5 @@
 # Ignore JPEG files that were downloaded
+output/
 *.jpg
 *.ods
 API_KEYS
