@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-17
+
+### Additions and New Features
+- Add four new columns to `price_out_parts_in_set.py` CSV output: `total lot mass` (weight x total quantity), `total lot volume` (dim_x x dim_y x dim_z x total quantity), `bricklink_image_url`, and `valid_image_url`. The valid_image_url picks the first working image from the LEGO, Rebrickable, and BrickLink URLs.
+- Add `libbrick/price_export.py` shared module with `FAVORITE_COLUMNS`, `format_number_human()`, `process_value()`, `process_row()`, `write_csv_row()`, `build_column_order()`, `clean_data_for_export()`, `build_image_urls()`, and `pick_valid_image_url()`. Single source of truth for CSV value coercion, column ordering, image-URL construction, and image-URL probing across the pricing scripts.
+- Add the same four new columns (`total lot mass`, `total lot volume`, `bricklink_image_url`, `valid_image_url`) to `price_out_elements.py` CSV output via the shared helpers.
+- Add `tests/test_price_export.py` with 12 pytest tests covering `format_number_human` (no scientific notation), `process_value` (URL exemption from 70-char truncation), `build_image_urls` (PART and MINIFIG forms), and `pick_valid_image_url` priority ordering against a fake `image_exists` stub.
+
+### Behavior or Interface Changes
+- Rename `element_image_url` column to `lego_image_url` for consistency with the image URL naming scheme.
+- Rewrite `price_out_elements.py` to match the structure of `price_out_parts_in_set.py`: adds `parse_args()`, `main()`, `csv.writer` output, `-d/--debug`, `-S/--shuffle`, `-L/--limit-parts`, and a Textual TUI mode (`ElementsApp(libbrick.tui.TaskRunnerApp)`) that activates when Textual is available and stdout is a TTY. The existing `-c/--csv` and `-e/--elementid` flags keep their semantics. Drops the every-10-rows `BLW.save_cache()` call and the conditional `time.sleep(random.random())` block; both are handled by the BrickLink wrapper layer.
+- CSV number formatting via `libbrick.price_export.format_number_human` no longer emits scientific notation for any finite float; trailing zeros and trailing decimal points are stripped (e.g. `0.3` instead of `0.300`).
+
+### Fixes and Maintenance
+- Integrate `libbrick/price_export.py` shared helpers into `price_out_parts_in_set.py`: remove duplicate local definitions of `process_value()`, `process_row()`, `write_csv_row()`, `clean_data_for_export()`, and `FAVORITE_COLUMNS`; use `libbrick.price_export.build_column_order()` instead of inline sorting in both CLI and TUI modes.
+
 ## 2026-05-16
 
 ### Additions and New Features
@@ -13,7 +29,7 @@
 - `price_out_parts_in_set.py` `process_value()` no longer truncates strings that start with `http://` or `https://`, so the full LEGO and Rebrickable image URLs survive in the CSV output (previously the 70-char cap chopped off the element ID).
 
 ### Fixes and Maintenance
-- `price_out_parts_in_set.py` now also writes a `rebrickable_image_url` column built from the element ID (`https://cdn.rebrickable.com/media/thumbs/parts/elements/<element_id>.jpg/250x250p.jpg`) alongside the existing `element_image_url`.
+- `price_out_parts_in_set.py` now also writes a `rebrickable_image_url` column built from the element ID (`https://cdn.rebrickable.com/media/thumbs/parts/elements/<element_id>.jpg/250x250p.jpg`) alongside the existing `lego_image_url`.
 - `libbrick/tui.py` `TaskRunnerApp` now flips the metrics panel border, title, and footer note to bold green `DONE` when all tasks finish successfully (or bold red `FAILED (N/M errors)` if any task failed) so completion is obvious at a glance.
 - `price_out_parts_in_set.py` always prints the output CSV path (with a ready-to-run `open` command) after the run finishes, in both TUI and CLI modes; the duplicate print previously emitted by `run_cli()` has been removed.
 - `libbrick/wrappers/wrapper_base.py` now prints the `==== LOAD/SAVE CACHE ====` banners and the per-file `.. loaded/wrote ...` lines in subdued ANSI gray (bright black) when stdout is a TTY, so routine cache chatter recedes against more important output. When stdout is not a TTY (pipe or file redirect), the messages are emitted plain so downstream tools do not see escape codes.

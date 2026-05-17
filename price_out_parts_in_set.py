@@ -11,13 +11,9 @@ import argparse
 # local repo modules
 import libbrick.common
 import libbrick.path_utils
+import libbrick.price_export
 import libbrick.tui
 import libbrick.wrappers.bricklink_wrapper as bricklink_wrapper
-
-FAVORITE_COLUMNS = [
-	'total quantity', 'item_id', 'color_name', 'name',
-	'category name', 'lot value', 'sale price',
-	]
 
 #=====================
 def get_set_id_from_args(args, parser):
@@ -64,19 +60,6 @@ def collect_data_for_part(part_dict, BLW, args):
 		data['element id'] = BLW.partIDandColorIDtoElementID(partID, colorID)
 		extra_part_data = BLW.getPartData(partID)
 
-		# partIDandColorIDtoElementID already picks an element ID with a valid image
-		element_id = data.get('element id')
-		if element_id is not None:
-			data['element_image_url'] = (
-				f"https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{element_id}.jpg"
-			)
-			data['rebrickable_image_url'] = (
-				f"https://cdn.rebrickable.com/media/thumbs/parts/elements/{element_id}.jpg/250x250p.jpg"
-			)
-		else:
-			data['element_image_url'] = ''
-			data['rebrickable_image_url'] = ''
-
 		if args.debug:
 			print(price_data)
 
@@ -84,6 +67,17 @@ def collect_data_for_part(part_dict, BLW, args):
 		data.update(price_data)
 		data.update(extra_part_data)
 		data.update(color_data)
+
+		# Build image URLs for PART type
+		element_id = data.get('element id')
+		image_urls = libbrick.price_export.build_image_urls(
+			element_id=element_id,
+			part_id=partID,
+			color_id=colorID,
+			item_type='PART',
+			item_id=None,
+		)
+		data.update(image_urls)
 
 	elif part_data['type'] == 'MINIFIG':
 		minifigID = part_data['no']
@@ -93,11 +87,49 @@ def collect_data_for_part(part_dict, BLW, args):
 			print(price_data)
 		data.update(price_data)
 
+		# Build image URLs for MINIFIG type
+		image_urls = libbrick.price_export.build_image_urls(
+			element_id=None,
+			part_id=None,
+			color_id=None,
+			item_type='MINIFIG',
+			item_id=minifigID,
+		)
+		data.update(image_urls)
+
 	# Calculate the total quantity
 	data['sale price'] = data.get('new_median_sale_price', -100)/100.0
 	data['total quantity'] = data.get('extra_quantity', 0) + data.get('quantity', 0)
 	data['category name'] = BLW.getCategoryName(part_data['category_id'])
 	data['lot value'] = (data.get('total quantity', 1) * data.get('sale price', -1))
+
+	# Calculate total lot mass (weight * total quantity) if weight is available
+	# Leave blank when weight is missing or zero so spreadsheets do not show 0.
+	weight = data.get('weight')
+	if weight not in (None, ''):
+		mass = float(weight) * data['total quantity']
+		if mass > 0:
+			data['total lot mass'] = mass
+
+	# Calculate total lot volume (dim_x * dim_y * dim_z * total quantity) if all dims available
+	# Leave blank when any dim is missing or the product is zero.
+	dim_x = data.get('dim_x')
+	dim_y = data.get('dim_y')
+	dim_z = data.get('dim_z')
+	if (dim_x not in (None, '') and
+		dim_y not in (None, '') and
+		dim_z not in (None, '')):
+		volume = float(dim_x) * float(dim_y) * float(dim_z) * data['total quantity']
+		if volume > 0:
+			data['total lot volume'] = volume
+
+	# Compute valid_image_url by checking which image URLs actually exist
+	priority_list = [
+		image_urls['lego_image_url'],
+		image_urls['rebrickable_image_url'],
+		image_urls['bricklink_image_url'],
+	]
+	data['valid_image_url'] = libbrick.price_export.pick_valid_image_url(BLW, priority_list)
 
 	# Remove fields that are long and not necessary for the CSV
 	data.pop('description', None)
@@ -109,77 +141,6 @@ def collect_data_for_part(part_dict, BLW, args):
 
 	return data
 
-def process_value(value):
-	"""
-	Process a single value based on its type for CSV output.
-
-	Parameters:
-		- value: The data value to be processed.
-
-	Returns:
-		- Processed value ready for CSV output.
-	"""
-	if isinstance(value, str):
-		# Replacing problematic characters
-		value = value.replace('\n', ' ')
-		value = value.replace('\t', ' ')
-		value = value.replace(',', ' ')
-		value = value.replace('  ', ' ')
-		# Truncating string if longer than 70 characters; do not truncate URLs
-		if not value.startswith(('http://', 'https://')):
-			value = value[:70]
-	elif isinstance(value, float):
-		# Format the float to limit to 3 decimal places
-		value = "{:.3f}".format(value)
-	return value
-
-def process_row(data, allkeys):
-	"""
-	Process the given data and return row of data
-
-	Parameters:
-		- data: The data dictionary containing the Lego part details.
-		- allkeys: List of keys to determine the order of the columns in the CSV.
-	"""
-	row = []
-	for key in allkeys:
-		value = data.get(key, '')
-		row.append(process_value(value))
-	return row
-
-
-#=====================
-def clean_data_for_export(data: dict) -> dict:
-	"""
-	Remove unused/legacy fields from data before CSV export.
-
-	Args:
-		data (dict): The raw data dictionary.
-
-	Returns:
-		dict: The cleaned data dictionary.
-	"""
-	data.pop('image_url', None)
-	data.pop('thumbnail_url', None)
-	# Remove all used_ prefix keys
-	for key in list(data.keys()):
-		if key.startswith('used_'):
-			data.pop(key, None)
-	return data
-
-
-#=====================
-def write_csv_row(writer, data: dict, allkeys: list) -> None:
-	"""
-	Write a single data row to the CSV writer.
-
-	Args:
-		writer: csv.writer object.
-		data (dict): The data dictionary for this row.
-		allkeys (list): Column key ordering.
-	"""
-	row = process_row(data, allkeys)
-	writer.writerow(row)
 
 
 #=====================
@@ -265,16 +226,13 @@ if libbrick.tui.TEXTUAL_AVAILABLE:
 				tuple: (ok, summary, column_updates) - do NOT touch widgets here.
 			"""
 			data = collect_data_for_part(task, self.BLW, self.args)
-			data = clean_data_for_export(data)
+			data = libbrick.price_export.clean_data_for_export(data)
 			# Initialize column headers on first task
 			if self.allkeys is None:
-				datakeys = sorted(data.keys())
-				self.allkeys = FAVORITE_COLUMNS + [
-					key for key in datakeys if key not in FAVORITE_COLUMNS
-				]
+				self.allkeys = libbrick.price_export.build_column_order(data)
 				self.csv_writer.writerow(self.allkeys)
 			# Write data row to CSV
-			write_csv_row(self.csv_writer, data, self.allkeys)
+			libbrick.price_export.write_csv_row(self.csv_writer, data, self.allkeys)
 			# Build summary and column update values
 			item_id = data.get('no', '???')
 			color_name = str(data.get('color_name', ''))[:20]
@@ -316,6 +274,9 @@ def run_cli(parts_tree: list, args, BLW, csvfile: str) -> None:
 		BLW: BrickLink wrapper instance.
 		csvfile (str): Output CSV file path.
 	"""
+	start_time = time.time()
+	durations = []
+	total_value = 0.0
 	with open(csvfile, 'w', newline='') as file:
 		writer = csv.writer(file, delimiter='\t')
 		allkeys = None
@@ -325,18 +286,40 @@ def run_cli(parts_tree: list, args, BLW, csvfile: str) -> None:
 			count += 1
 			remaining = total_parts - count
 			print(f"\n   PART {count} of {total_parts} ({remaining} remaining)")
+			task_start = time.time()
 			data = collect_data_for_part(part_dict, BLW, args)
-			data = clean_data_for_export(data)
+			data = libbrick.price_export.clean_data_for_export(data)
 			# Setting the columns order and writing headers
 			if allkeys is None:
-				datakeys = sorted(data.keys())
-				allkeys = FAVORITE_COLUMNS + [
-					key for key in datakeys if key not in FAVORITE_COLUMNS
-				]
+				allkeys = libbrick.price_export.build_column_order(data)
 				writer.writerow(allkeys)
 			# Process and write data to CSV
-			write_csv_row(writer, data, allkeys)
+			libbrick.price_export.write_csv_row(writer, data, allkeys)
+			task_duration = time.time() - task_start
+			durations.append(task_duration)
+			lot_value = data.get('lot value', 0)
+			if isinstance(lot_value, (int, float)):
+				total_value += float(lot_value)
+			# Per-part summary line: time and rolling totals
+			print(f"   ({task_duration:.1f}s)  Running total: ${total_value:,.2f}")
 	BLW.close()
+	# Final summary: total elapsed, average per part, total lot value
+	elapsed = time.time() - start_time
+	slow = [d for d in durations if d >= 1.0]
+	if slow:
+		avg = sum(slow) / len(slow)
+		avg_text = f"{avg:.1f}s"
+	elif durations:
+		avg = sum(durations) / len(durations)
+		avg_text = f"{avg:.1f}s (cached)"
+	else:
+		avg_text = "--"
+	print()
+	print("==== SUMMARY ====")
+	print(f"  Parts:        {len(durations)}")
+	print(f"  Elapsed:      {libbrick.common.format_duration(elapsed)}")
+	print(f"  Sec/part:     {avg_text}")
+	print(f"  Total value:  ${total_value:,.2f}")
 
 
 #=====================

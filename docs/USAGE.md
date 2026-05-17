@@ -7,7 +7,7 @@
 - `lookup_*` scripts use `output/lookup/`.
 
 ## Setup
-- See [docs/INSTALL.md](docs/INSTALL.md) for API keys and installation steps.
+- See [docs/INSTALL.md](INSTALL.md) for API keys and installation steps.
 
 ## macOS setup
 - Install tools and Python deps:
@@ -53,8 +53,15 @@ Number,Retail
 - `lookup_set_rebrick.py`: Rebrickable set lookup to CSV.
 - `gimme_set_data.py`: combined set data output to CSV.
 - `get_minifig_from_set_bricklink.py`: list minifigs per set to CSV.
-- `price_out_elements.py`: element price output to CSV.
-- `price_out_parts_in_set.py`: part price output to CSV.
+### price_out_elements.py
+- Required: exactly one of `-c/--csv FILE` (CSV with element IDs) or `-e/--elementid #` (single element ID).
+- Optional: `-S/--shuffle` (randomize order), `-L/--limit-parts N` (process first N only), `-d/--debug` (enable debug output), `--tui` (force Textual TUI), `--cli` (force plain CLI).
+- Output CSV path is printed at end with ready-to-run `open` command.
+
+### price_out_parts_in_set.py
+- Required: exactly one of `-l/--legoid #` (LEGO set ID, e.g. 11011) or `-s/--setid #-1` (BrickLink set ID, e.g. 11011-1).
+- Optional: `-S/--shuffle` (randomize order), `-L/--limit-parts N` (process first N only), `-d/--debug` (enable debug output), `--tui` (force Textual TUI), `--cli` (force plain CLI).
+- Output CSV path is printed at end with ready-to-run `open` command.
 - `quick_set_info.py`: summary set info to CSV.
 - `lego_set_csv_to_bricklink_xml.py`: convert set CSV to BrickLink XML.
 - `inventory_xml_csv_tool.py`: convert BrickLink inventory XML and CSV.

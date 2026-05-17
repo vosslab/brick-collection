@@ -757,7 +757,9 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 		if self.image_checks % 20 == 0:
 			self.save_cache("bricklink_element_id_map_cache")
 			print(self.status_counts)
-		time.sleep(random.random())
+		# Skip throttle for lego.com (large Akamai CDN); be polite to smaller CDNs.
+		if 'www.lego.com' not in url:
+			time.sleep(random.random())
 		user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36'
 		headers = {
 			'User-Agent': user_agent,
