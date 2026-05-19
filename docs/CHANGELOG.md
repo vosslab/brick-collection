@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-19
+
+### Behavior or Interface Changes
+- `libbrick/image_cache.py::download_image` now sends a desktop-Chrome User-Agent header so BrickLink's image CDN does not return HTTP 403 to the default python-requests UA. Failure path raises FileNotFoundError with status and URL.
+- Defer OAuth1 credential loading in `libbrick/wrappers/bricklink_wrapper.py` until the first actual HTTP API call. `BrickLink.__init__()` now succeeds without `bricklink_api_private.yml`, setting `api_data` and `bricklink_api` to `None`. A new `_ensure_api_client()` helper method is called at the start of `_bricklink_get()` to lazily load and parse the credential file on first use. The helper respects `BRICKLINK_API_FILE` environment variable override before falling back to git root or local search paths. Raises `FileNotFoundError` if no credential file is found at first API call time.
+
 ## 2026-05-17
 
 ### Additions and New Features

@@ -27,30 +27,8 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 	#============================
 	def __init__(self):
 		self.debug = True
-		key_file_name = 'bricklink_api_private.yml'
-		local_key_path = os.path.join(os.path.dirname(__file__), key_file_name)
-		git_root = libbrick.path_utils.get_git_root()
-		self.api_data = None  # Ensure it's defined
-		key_paths = []
-		if git_root is not None:
-			key_paths.append(os.path.join(git_root, key_file_name))
-		key_paths.append(key_file_name)
-		key_paths.append(local_key_path)
-		for key_path in key_paths:
-			if os.path.exists(key_path):
-				with open(key_path, 'r') as f:
-					self.api_data = yaml.safe_load(f)
-				break
-		# If no valid file was found, exit with an error
-		if self.api_data is None:
-			print("Error: API key file not found.")
-			exit(1)
-		self.bricklink_api = bricklink.api.BrickLinkAPI(
-			self.api_data['consumer_key'],
-			self.api_data['consumer_secret'],
-			self.api_data['token_value'],
-			self.api_data['token_secret'],
-		)
+		self.api_data = None
+		self.bricklink_api = None
 		self.color_dict = None
 		self.price_count = 0
 		self.image_checks = 0
@@ -74,8 +52,48 @@ class BrickLink(wrapper_base.BaseWrapperClass):
 
 	#============================
 	#============================
+	def _ensure_api_client(self):
+		"""
+		Lazily load OAuth1 credentials and build BrickLinkAPI client on first use.
+
+		2026-05-19: Deferred credential loading for downstream FastAPI service;
+		construction must succeed without bricklink_api_private.yml.
+
+		Raises:
+			FileNotFoundError: if no credential file resolved.
+			KeyError: if file is missing a required field.
+		"""
+		if self.bricklink_api is not None:
+			return
+		key_file_name = 'bricklink_api_private.yml'
+		env_path = os.environ.get('BRICKLINK_API_FILE')
+		key_paths = []
+		if env_path:
+			key_paths.append(env_path)
+		git_root = libbrick.path_utils.get_git_root()
+		if git_root is not None:
+			key_paths.append(os.path.join(git_root, key_file_name))
+		key_paths.append(key_file_name)
+		key_paths.append(os.path.join(os.path.dirname(__file__), key_file_name))
+		for key_path in key_paths:
+			if os.path.exists(key_path):
+				with open(key_path, 'r') as f:
+					self.api_data = yaml.safe_load(f)
+				break
+		if self.api_data is None:
+			raise FileNotFoundError(f"BrickLink API key file not found in: {key_paths}")
+		self.bricklink_api = bricklink.api.BrickLinkAPI(
+			self.api_data['consumer_key'],
+			self.api_data['consumer_secret'],
+			self.api_data['token_value'],
+			self.api_data['token_secret'],
+		)
+
+	#============================
+	#============================
 	def _bricklink_get(self, url):
 		""" common function for all API calls """
+		self._ensure_api_client()
 		#random sleep of 0-1 seconds to help server load
 		time.sleep(random.random()+random.random())
 		status, headers, response = self.bricklink_api.get(url)
